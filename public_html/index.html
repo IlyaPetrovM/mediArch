@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+
+<html>
+    <body>
+         <nav>
+            <a href='/files.html'>Файлы</a> 
+            <a href='/index.html'>Загрузка</a> 
+         </nav>
+        <form method='POST' action='/api/upload' enctype='multipart/form-data' id='loaderForm'>
+            <input type="file" name="many_files" id='filesInput' multiple>
+            <button id='uploadButton' > Загрузить </button>
+            <br>
+            <input id='progressOutput' type=text size=80 /> 
+            <br>
+            <textarea id='filesReadyList' rows=5 cols=80 readonly >Список загруженных файлов</textarea>
+        </form>
+    
+    </body>
+    <script src='js/sql.js'></script>
+    <script src='js/loader.js'></script>
+    <script src='js/main.js'></script>
+</html>

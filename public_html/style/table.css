@@ -1,0 +1,34 @@
+/*
+   table.css
+*/
+
+.table{
+  
+}
+.table .row{
+   display:table-row;
+   padding: 2px;
+}
+.table .cell{
+   display:table-cell;
+   padding: 4px;
+   min-width: 100px;
+}
+
+.hiddenView{
+   display: none !important;
+}
+
+.row:hover {
+   background:rgba(0,0,0, 0.05);
+}
+.cell input{
+   padding:4px;
+width: 100px;
+}
+.changed{
+   background-color:rgba(255,255,0, 0.2);
+}
+.error{
+   background-color:rgba(255,0,0, 0.3);
+}
