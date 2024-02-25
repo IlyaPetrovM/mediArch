@@ -8,11 +8,12 @@
     
     <body>
          <nav>
-            <a href='/files.html'>Файлы</a> |
+            <a href='/files.html'>Файлы</a> | 
             <a href='/index.html'>Загрузка</a> | 
-             <a href='/interfaces.html'># Интерфейсы</a> |
+            <a href='/interfaces.html'># Интерфейсы</a> 
          </nav>
-         <button onclick='getTable(query, "files")'>Обновить</button>
+         <button onclick='getTable(query, "interfaces")'>Обновить</button>
+        <button onclick='addRow(query, "interfaces")'>Добавить строку</button>
         <div id=contentTable class=table>
 
         </div>
@@ -25,9 +26,7 @@
     
     <script src='js/table.js'> </script>
     <script>
-        var query = `SELECT id as 'preview', description, oldName, name, fileType  from files`;
-        getTable(query, 'files');
-    
-      
+        var query = `SELECT tableName, col, viewHtml, editorHtml FROM interfaces`;
+        getTable(query, 'interfaces');
     </script>
 </html>

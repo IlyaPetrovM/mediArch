@@ -1,7 +1,7 @@
 -- --------------------------------------------------------
--- Хост:                         185.185.71.146
--- Версия сервера:               10.3.39-MariaDB-0+deb10u1 - Debian 10
--- Операционная система:         debian-linux-gnu
+-- Хост:                         127.0.0.1
+-- Версия сервера:               10.5.10-MariaDB - mariadb.org binary distribution
+-- Операционная система:         Win64
 -- HeidiSQL Версия:              11.2.0.6213
 -- --------------------------------------------------------
 
@@ -20,10 +20,30 @@ USE `test_file_uploader`;
 -- Дамп структуры для таблица test_file_uploader.files
 CREATE TABLE IF NOT EXISTS `files` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(512) DEFAULT NULL,
-  `oldName` varchar(255) DEFAULT NULL,
-  `filetype` char(4) DEFAULT NULL,
+  `name` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT '',
+  `time_upload` datetime DEFAULT current_timestamp(),
+  `oldName` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `filetype` char(4) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `preview` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=165 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1795 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Экспортируемые данные не выделены.
 
+-- Дамп структуры для таблица test_file_uploader.interfaces
+CREATE TABLE IF NOT EXISTS `interfaces` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tableName` char(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `col` char(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `editorHtml` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `viewHtml` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Экспортируемые данные не выделены.
+
+/*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
+/*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40111 SET SQL_NOTES=IFNULL(@OLD_SQL_NOTES, 1) */;

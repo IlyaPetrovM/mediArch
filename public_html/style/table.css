@@ -3,16 +3,33 @@
 */
 
 .table{
-  
+  display: flex;
+  flex-direction: column;
+
+  flex-wrap: nowrap;
+  align-content: space-around;
+  overflow: scroll;  
 }
 .table .row{
-   display:table-row;
    padding: 2px;
+    display:flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+   align-content: stretch;
+    height: 100px;
 }
 .table .cell{
-   display:table-cell;
    padding: 4px;
    min-width: 100px;
+}
+.cell .view{
+    
+    min-width:10px;
+     height: 100px;
+}
+
+.cell .view:hover{
+    border: 1px solid green;
 }
 
 .hiddenView{
@@ -31,4 +48,7 @@ width: 100px;
 }
 .error{
    background-color:rgba(255,0,0, 0.3);
+}
+img.preview{
+    height: 64px;
 }
