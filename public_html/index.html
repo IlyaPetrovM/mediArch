@@ -1,20 +1,19 @@
 <!DOCTYPE html>
 
 <html>
+
     <body>
-         <nav>
+        <h1>mediArch</h1>
+        <nav>
+            <a href='/index.html'>Главная</a> 
             <a href='/files.html'>Файлы</a> 
-            <a href='/index.html'>Загрузка</a> 
-             <a href='/interfaces.html'># Интерфейсы</a> 
+            <a href='/load.html'>Загрузка</a> 
+            <a href='/marks.html'>Описи</a> 
+            <a href='/informants.html'>Информанты</a> 
+            <a href='/users.html'>Пользователи</a> 
+            <a href='/interfaces.html'>Интерфейсы</a> 
          </nav>
-        <form method='POST' action='/api/upload' enctype='multipart/form-data' id='loaderForm'>
-            <input type="file" name="many_files" id='filesInput' multiple>
-            <button id='uploadButton' > Загрузить </button>
-            <br>
-            <input id='progressOutput' type=text size=80 /> 
-            <br>
-            <textarea id='filesReadyList' rows=5 cols=80 readonly >Список загруженных файлов</textarea>
-        </form>
+
     
     </body>
     <script src='js/sql.js'></script>

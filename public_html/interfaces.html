@@ -7,13 +7,20 @@
     
     
     <body>
-         <nav>
-            <a href='/files.html'>Файлы</a> | 
-            <a href='/index.html'>Загрузка</a> | 
-            <a href='/interfaces.html'># Интерфейсы</a> 
+        <nav>
+            <a href='/index.html'>Главная</a> 
+            <a href='/files.html'>Файлы</a> 
+            <a href='/load.html'>Загрузка</a> 
+             <a href='/interfaces.html'>Интерфейсы</a> 
          </nav>
          <button onclick='getTable(query, "interfaces")'>Обновить</button>
         <button onclick='addRow(query, "interfaces")'>Добавить строку</button>
+        
+        <div>
+            <input class="search" id=searchInput type="search"> 
+            <button onclick='search(searchInput.value)'>Искать</button>
+        </div>
+        
         <div id=contentTable class=table>
 
         </div>
@@ -26,7 +33,20 @@
     
     <script src='js/table.js'> </script>
     <script>
-        var query = `SELECT tableName, col, viewHtml, editorHtml FROM interfaces`;
-        getTable(query, 'interfaces');
+        var srch = document.getElementById('searchInput');
+        search('')
+
+        srch.addEventListener('keydown', (e)=> {if (e.code == 'Enter') search(srch.value)});
+
+        function search(s='') {
+            srch.blur();
+            query = `SELECT tableName, col, viewHtml, editorHtml FROM                   interfaces
+                    WHERE 
+                    tableName LIKE '%${s}%' OR  
+                    col LIKE '%${s}%' OR
+                    viewHtml LIKE '%${s}%' OR
+                    editorHtml LIKE '%${s}%'`;
+            getTable(query, 'interfaces');
+        }
     </script>
 </html>

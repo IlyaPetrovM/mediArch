@@ -7,12 +7,19 @@
     
     
     <body>
-         <nav>
-            <a href='/files.html'>Файлы</a> |
-            <a href='/index.html'>Загрузка</a> | 
-             <a href='/interfaces.html'># Интерфейсы</a> |
+        <nav>
+            <a href='/index.html'>Главная</a> 
+            <a href='/files.html'>Файлы</a> 
+            <a href='/load.html'>Загрузка</a> 
+            <a href='/interfaces.html'>Интерфейсы</a> 
          </nav>
-         <button onclick='getTable(query, "files")'>Обновить</button>
+         
+        
+        <div>
+            <input class="search" id=searchInput type="search"> 
+            <button onclick='search(searchInput.value)'>Искать</button>
+        </div>
+        
         <div id=contentTable class=table>
 
         </div>
@@ -25,9 +32,21 @@
     
     <script src='js/table.js'> </script>
     <script>
-        var query = `SELECT id as 'preview', description, oldName, name, fileType  from files`;
-        getTable(query, 'files');
-    
-      
+        
+        var srch = document.getElementById('searchInput');
+        search('')
+        
+        srch.addEventListener('keydown', (e)=> {if (e.code == 'Enter') search(srch.value)});
+
+        function search(s='') {
+            srch.blur();
+            query = `SELECT 
+                        id as 'preview',  
+                        description, oldName, name, fileType 
+                    FROM files 
+                    WHERE 
+                    description LIKE '%${s}%' OR oldName LIKE '%${s}%' OR name LIKE '%${s}%' OR fileType LIKE '%${s}%'`;
+            getTable(query, 'files');
+        }
     </script>
 </html>
