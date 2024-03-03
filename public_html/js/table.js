@@ -1,5 +1,9 @@
 var table = document.getElementById('contentTable');
-
+/**
+ * @brief Добавление одной строки
+ * @param [in] String selectQuery запрос к таблице БД в виде SQL
+ * @param [in] String tableName Название запрашиваемой таблицы
+ */
 async function addRow(selectQuery,tableName){
     const insert_res = await sql('INSERT INTO interfaces (tableName,col) VALUES ("table", "col") ');
     if (insert_res.errors) console.log('Ошибка создания строки')
@@ -7,9 +11,10 @@ async function addRow(selectQuery,tableName){
     
     interfaces = await getInterfaces();
     console.log(interfaces)
-    let pk = await getPrimaryKey(tableName);
+    let pk = '';
+    if(tableName) pk = await getPrimaryKey(tableName);
     selectQuery = selectQuery.replace('SELECT', 'SELECT '+pk+', ')
-    const res = await sql(selectQuery + ` where ${pk}=${insert_res.data.insertId} LIMIT 1`);
+    const res = await sql(selectQuery + ` AND  ${pk}=${insert_res.data.insertId} LIMIT 1`);
     if (res.errors) console.log('Ошибка выполнения SQL-запроса')
     let dataRow = res.data[0];
     

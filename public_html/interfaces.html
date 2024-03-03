@@ -40,12 +40,13 @@
 
         function search(s='') {
             srch.blur();
-            query = `SELECT tableName, col, viewHtml, editorHtml FROM                   interfaces
+            query = `SELECT tableName, col, viewHtml, editorHtml 
+            FROM interfaces
                     WHERE 
-                    tableName LIKE '%${s}%' OR  
+                    (tableName LIKE '%${s}%' OR  
                     col LIKE '%${s}%' OR
                     viewHtml LIKE '%${s}%' OR
-                    editorHtml LIKE '%${s}%'`;
+                    editorHtml LIKE '%${s}%' ) `;
             getTable(query, 'interfaces');
         }
     </script>

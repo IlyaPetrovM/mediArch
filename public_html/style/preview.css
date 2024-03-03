@@ -1,0 +1,11 @@
+/*preview.css*/
+
+.chooseWatchPanel {
+    display: flex;
+    flex-direction: row;
+}
+#preview{
+    
+    width: 320px;
+    background: rgba(200,60,60);
+}
