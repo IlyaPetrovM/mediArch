@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+
+<html>
+   <head>
+       <link href="style/preview.css" rel="stylesheet" />
+         <link href="style/table.css" rel="stylesheet" />
+   </head>
+    
+    
+    <body>
+        <nav>
+            <a href='/index.html'>Главная</a> 
+            <a href='/files.html'>Файлы</a> 
+            <a href='/load.html'>Загрузка</a> 
+            <a href='/interfaces.html'>Интерфейсы</a> 
+         </nav>
+         
+        
+        <div>
+            <input class="search" id=searchInput type="search"> 
+            <button onclick='search(searchInput.value)'>Искать</button>
+        </div>
+        
+        <div class='chooseWatchPanel'>
+            <div id=contentTable class=table></div>
+            <div id="preview">
+                    Окно предпросмотра
+                   <img hidden id=previewImg style="width:100%;" class="" />
+                   <video hidden id=previewVideo style="width:100%;" class="" controls> Не удалось отобразить видео </video>
+                   <iframe hidden id=previewIframe style="width:100%; height:100%;" class="" > Не удалось отобразить файл</iframe>
+            </div>
+        </div>
+    
+    </body>
+    
+    
+    <script src='js/sql.js'></script>
+    <script src='js/main.js'></script>
+    
+    <script src='js/table.js'> </script>
+    <script>
+        
+        var srch = document.getElementById('searchInput');
+        search('')
+        
+        srch.addEventListener('keydown', (e)=> {if (e.code == 'Enter') search(srch.value)});
+
+        function search(s='') {
+            srch.blur();
+            query = `SELECT 
+                        id as 'preview',  
+                        '' as 'watchBtn',
+                        description, oldName, name, fileType 
+                    FROM files 
+                    WHERE 
+                    (description LIKE '%${s}%' OR oldName LIKE '%${s}%' OR name LIKE '%${s}%' OR fileType LIKE '%${s}%' ) `;
+            getTable(query, 'files');
+        }
+        
+        function getUrlExtention( url ) {
+            return url.split(/[#?]/)[0].split('.').pop().trim().toLowerCase();
+        }
+        
+        function watch(path){
+            previewImg.hidden = true;
+            previewVideo.hidden = true;
+            previewIframe.hidden = true;
+             let ext = getUrlExtention(path);
+            switch(ext){
+              case 'mkv':
+              case 'mov':
+              case 'wav':
+              case 'aac':
+              case 'mp3':
+              case 'mp4': 
+                previewVideo.src = path; 
+                previewVideo.hidden = false;
+                break;
+              case 'gif':
+              case 'bmp':
+              case 'svg':
+              case 'png':
+              case 'tif':
+              case 'jpg':
+                previewImg.src = path;
+                previewImg.hidden = false;
+                break;
+              default:
+                previewIframe.src = path;
+                previewIframe.hidden = false;
+       } 
+        }
+    </script>
+</html>

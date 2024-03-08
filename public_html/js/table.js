@@ -47,7 +47,6 @@ async function getInterfaces(){
 */
 async function getTable(query, tableName) {
     interfaces = await getInterfaces();
-    console.log(interfaces)
     let pk = await getPrimaryKey(tableName);
     query = query.replace('SELECT', 'SELECT '+pk+', ')
     const res = await sql(query);

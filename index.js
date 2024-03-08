@@ -57,8 +57,28 @@ app.post('/api/sql', function(req, res) {
     
     const conn = mysql.createConnection(DB_CONFIG)
     conn.query(query, inserts, (errors, data, fields) => {
-        console.log(errors)
+        console.info('DATA:')
+        console.info(data)
+        if (errors) console.error(errors)
         res.send(JSON.stringify({errors, data, fields}));
+    });
+    conn.end();
+});
+
+/** 
+    Перенаправление запроса к базе данных возвращение только данных таблицы
+*/
+app.post('/api/sql/dataOnly', function(req, res) {
+    
+    const {query, inserts} = req.body
+    console.log('formated:', mysql.format(query, inserts))
+    
+    const conn = mysql.createConnection(DB_CONFIG)
+    conn.query(query, inserts, (errors, data, fields) => {
+        console.info('DATA:')
+        console.info(data)
+        if (errors) console.error(errors)
+        res.send(JSON.stringify(data));
     });
     conn.end();
 });

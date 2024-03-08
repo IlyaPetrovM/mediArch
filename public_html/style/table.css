@@ -2,53 +2,54 @@
    table.css
 */
 
-.table{
-  display: flex;
-  flex-direction: column;
-
-  flex-wrap: nowrap;
-  align-content: space-around;
-  overflow: scroll;  
+.table {
+    display: table;
+    overflow: scroll;
 }
-.table .row{
-   padding: 2px;
-    display:flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-   align-content: stretch;
+
+.table .row {
+    padding: 2px;
+    display: table-row;
     height: 100px;
 }
-.table .cell{
-   padding: 4px;
-   min-width: 100px;
-}
-.cell .view{
-    
-    min-width:10px;
-     height: 100px;
+
+.table .cell {
+    display: table-cell;
+    padding: 4px;
+    min-width: 10px;
 }
 
-.cell .view:hover{
+.cell .view {
+
+    min-width: 10px;
+    min-height: 10px;
+}
+
+.cell .view:hover {
     border: 1px solid green;
 }
 
-.hiddenView{
-   display: none !important;
+.hiddenView {
+    display: none !important;
 }
 
 .row:hover {
-   background:rgba(0,0,0, 0.05);
+    background: rgba(0, 0, 0, 0.05);
 }
-.cell input{
-   padding:4px;
-width: 100px;
+
+.cell input {
+    padding: 4px;
+    width: 100px;
 }
-.changed{
-   background-color:rgba(255,255,0, 0.2);
+
+.changed {
+    background-color: rgba(255, 255, 0, 0.2);
 }
-.error{
-   background-color:rgba(255,0,0, 0.3);
+
+.error {
+    background-color: rgba(255, 0, 0, 0.3);
 }
-img.preview{
+
+img.preview {
     height: 64px;
 }
