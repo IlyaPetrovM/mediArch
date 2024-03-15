@@ -1,16 +1,18 @@
 /**
    Настройки
 */
-const PORT = 3000
-const UPLOAD_PATH = __dirname + '/public_html/uploads/'
-const DB_CONFIG = {
-    host: "localhost",
-    user: "root",
-    database: "test_file_uploader",
-    password: 'Licey1553'
-};
+const config = {
+    PORT:3000,
+    UPLOAD_PATH:__dirname + '/public_html/uploads/',
+    DB:{
+        host: "localhost",
+        user: "root",
+        database: "test_file_uploader",
+        password: 'Licey1553'
+    }
+}
 
-
+//const config  = require('./config')
 
 const express = require('express');
 const mysql = require('mysql')
@@ -34,10 +36,10 @@ app.post('/api/upload', function(req, res) {
         let files = req.files.many_files; // так как мы пишем <input name="many_files" 
         if (files.length > 1)
             files.forEach(function(file, index){
-                file.mv(UPLOAD_PATH + file.name); 
+                file.mv(config.UPLOAD_PATH + file.name); 
             })
         else{
-                files.mv(UPLOAD_PATH + files.name); 
+                files.mv(config.UPLOAD_PATH + files.name); 
         }
         res.send( {errors: null, data: files.name, message: 'OK'} );
         
@@ -55,7 +57,7 @@ app.post('/api/sql', function(req, res) {
     const {query, inserts} = req.body
     console.log('formated:', mysql.format(query, inserts))
     
-    const conn = mysql.createConnection(DB_CONFIG)
+    const conn = mysql.createConnection(config.DB)
     conn.query(query, inserts, (errors, data, fields) => {
         console.info('DATA:')
         console.info(data)
@@ -73,7 +75,7 @@ app.post('/api/sql/dataOnly', function(req, res) {
     const {query, inserts} = req.body
     console.log('formated:', mysql.format(query, inserts))
     
-    const conn = mysql.createConnection(DB_CONFIG)
+    const conn = mysql.createConnection(config.DB)
     conn.query(query, inserts, (errors, data, fields) => {
         console.info('DATA:')
         console.info(data)
@@ -83,6 +85,6 @@ app.post('/api/sql/dataOnly', function(req, res) {
     conn.end();
 });
 
-app.listen(PORT, function() {
-    console.log('Server started at ', PORT, ' port')
+app.listen(config.PORT, function() {
+    console.log('Server started at ', config.PORT, ' port')
 })

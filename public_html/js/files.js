@@ -1,14 +1,22 @@
 ///
 /// КОНСТАНТЫ И КОНФИГУРАЦИЯ
 ///
-const STANDARD_QUERY = `SELECT 
+const STANDARD_QUERY = `SELECT id, 
                     'Открыть' as 'preview',
                     'Смотреть' as 'watchBtn',
                         description, oldName, name, fileType
                     FROM files `;
 
 const FORMAT_FILES_COLUMNS = [
-    {field: 'description', editor:'input' }
+    {
+        field: 'description', 
+        editor:'textarea', 
+        cellEdited: 
+            async function(cell){
+                let res = await sql( `UPDATE files SET description='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
+                console.log(res)
+             }
+    },  
 ];
 
 /**
@@ -30,15 +38,12 @@ var table = new Tabulator("#fileTable", {
     ajaxContentType: "json",
     layout: "fitColumns",
     autoColumns: true,
-    autoColumnsDefinitions: [
-    {field: 'description', editor:'input' }
-], // Применять форматирование только к выделенным колонкам
+    autoColumnsDefinitions: FORMAT_FILES_COLUMNS
 });
 table.on('tableBuilt', function(e){ 
     console.log('ready!')
     loadDataToDable(STANDARD_QUERY)
 });
-
 
 
 /**
