@@ -12,11 +12,12 @@ const FORMAT_FILES_COLUMNS = [
         field: 'description', 
         editor:'textarea', 
         cellEdited: 
-            async function(cell){
-                let res = await sql( `UPDATE files SET description='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
-                console.log(res)
-             }
-    },  
+            async function(cell){ let res = await sql( `UPDATE files SET description='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);}
+    },
+    {
+        field: 'preview',
+        formatter: function(cell) {return `<img src='uploads/${cell.getRow().getData().oldName}' class='previewImage'>`; }
+    }
 ];
 
 /**
