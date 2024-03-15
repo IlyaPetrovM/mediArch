@@ -29,8 +29,8 @@ async function load() {
     for (let i = 0; i < files.length; i++) {
         let load_res = await loadFileXhr(files[i], progressPrint); // с помощью await ждём загрузки каждого файла по отдельности
         const sql_res = await sql('INSERT INTO ?? (??) VALUES ( ? ) ',
-            ['files', ['oldName', 'filetype'],
-                [files[i].name, null]]);
+            ['files', ['oldName', 'name', 'filetype'],
+                [files[i].name, transliterate(files[i].name), getUrlExtention(files[i].name)]]);
 
         if (load_res.errors) console.log('Ошибка загрузки файла')
         if (sql_res.errors) console.log('Ошибка выполнения SQL-запроса')
@@ -39,6 +39,13 @@ async function load() {
     }
     print(`-- ГОТОВО --`);
 
+}
+
+/**
+* Определяет расширение файла
+*/
+function getUrlExtention( url ) {
+  return url.split(/[#?]/)[0].split('.').pop().trim().toLowerCase();
 }
 
 
@@ -97,4 +104,12 @@ function loadFileXhr(file, onprogress){
         };
         xhr.send(formData);
     });
+}   
+
+const alphabet = {"Ё":"YO","Й":"I","Ц":"TS","У":"U","К":"K","Е":"E","Н":"N","Г":"G","Ш":"SH","Щ":"SCH","З":"Z","Х":"H","Ъ":"'","ё":"yo","й":"i","ц":"ts","у":"u","к":"k","е":"e","н":"n","г":"g","ш":"sh","щ":"sch","з":"z","х":"h","ъ":"","Ф":"F","Ы":"I","В":"V","А":"A","П":"P","Р":"R","О":"O","Л":"L","Д":"D","Ж":"ZH","Э":"E","ф":"f","ы":"i","в":"v","а":"a","п":"p","р":"r","о":"o","л":"l","д":"d","ж":"zh","э":"e","Я":"Ya","Ч":"CH","С":"S","М":"M","И":"I","Т":"T","Ь":"'","Б":"B","Ю":"YU","я":"ya","ч":"ch","с":"s","м":"m","и":"i","т":"t","ь":"","б":"b","ю":"yu", ' ':'_'};
+
+function transliterate(word){
+  return word.split('').map(function (char) { 
+    return alphabet[char] || char; 
+  }).join("");
 }

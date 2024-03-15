@@ -1,18 +1,9 @@
 /**
    Настройки
 */
-const config = {
-    PORT:3000,
-    UPLOAD_PATH:__dirname + '/public_html/uploads/',
-    DB:{
-        host: "localhost",
-        user: "root",
-        database: "test_file_uploader",
-        password: 'Licey1553'
-    }
-}
 
-//const config  = require('./config')
+
+const config  = require('./config')
 
 const express = require('express');
 const mysql = require('mysql')
@@ -36,10 +27,12 @@ app.post('/api/upload', function(req, res) {
         let files = req.files.many_files; // так как мы пишем <input name="many_files" 
         if (files.length > 1)
             files.forEach(function(file, index){
-                file.mv(config.UPLOAD_PATH + file.name); 
+                file.name = Buffer.from(file.name, 'latin1').toString('utf8');
+                file.mv(config.UPLOAD_PATH + 'newFile' + transliterate(file.name)); 
             })
         else{
-                files.mv(config.UPLOAD_PATH + files.name); 
+                files.name = Buffer.from(files.name, 'latin1').toString('utf8');
+                files.mv(config.UPLOAD_PATH + transliterate(files.name)); 
         }
         res.send( {errors: null, data: files.name, message: 'OK'} );
         
@@ -88,3 +81,13 @@ app.post('/api/sql/dataOnly', function(req, res) {
 app.listen(config.PORT, function() {
     console.log('Server started at ', config.PORT, ' port')
 })
+
+
+const alphabet = {"Ё":"YO","Й":"I","Ц":"TS","У":"U","К":"K","Е":"E","Н":"N","Г":"G","Ш":"SH","Щ":"SCH","З":"Z","Х":"H","Ъ":"'","ё":"yo","й":"i","ц":"ts","у":"u","к":"k","е":"e","н":"n","г":"g","ш":"sh","щ":"sch","з":"z","х":"h","ъ":"","Ф":"F","Ы":"I","В":"V","А":"A","П":"P","Р":"R","О":"O","Л":"L","Д":"D","Ж":"ZH","Э":"E","ф":"f","ы":"i","в":"v","а":"a","п":"p","р":"r","о":"o","л":"l","д":"d","ж":"zh","э":"e","Я":"Ya","Ч":"CH","С":"S","М":"M","И":"I","Т":"T","Ь":"'","Б":"B","Ю":"YU","я":"ya","ч":"ch","с":"s","м":"m","и":"i","т":"t","ь":"","б":"b","ю":"yu", ' ':'_'};
+
+function transliterate(word){
+    
+  return word.split('').map(function (char) { 
+    return alphabet[char] || char; 
+  }).join("");
+}
