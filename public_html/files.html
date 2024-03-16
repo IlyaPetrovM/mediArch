@@ -19,6 +19,9 @@ TODO аутентификация!!!
 
 <body>
     <div class="container-fluid">
+        
+        <!-- Панель навигации -->
+        
         <div class=row>
             <nav class="navbar navbar-expand-lg navbar-light bg-light">
                 <div class="container-fluid">
@@ -42,8 +45,20 @@ TODO аутентификация!!!
         </div>
 
         <div class='row'>
+
+            
+            <!-- ТАБЛИЦА   -->
             <div class="col">
                 <div id="fileTable" class="embed-responsive embed-responsive-16by9"></div>
+            </div>
+            
+            <!--     Просмотрщик       -->
+            <div  class="col">
+               <div  class="embed-responsive embed-responsive-16by9">  
+                   <img hidden id=previewImg style="width:100%;" class="embed-responsive embed-responsive-16by9" />
+                   <video hidden id=previewVideo style="width:100%;" class="embed-responsive embed-responsive-16by9" controls></video>
+                   <iframe hidden id=previewIframe style="width:100%; height:100%;" class="embed-responsive embed-responsive-16by9" ></iframe>
+               </div>
             </div>
         </div>
     </div>
