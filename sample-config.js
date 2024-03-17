@@ -1,4 +1,5 @@
 const config = {
+    YANDEX_API: 'xxxxxxx-xxxx-xxx-xxx-xxxxxxxxxxx',
     PORT: 3000,
     UPLOAD_PATH:__dirname + '/public_html/uploads/',
     DB:{

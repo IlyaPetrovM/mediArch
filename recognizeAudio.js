@@ -1,3 +1,4 @@
+const config  = require('./config')
 const fs = require('fs');
 const path = require('path');
 
@@ -71,7 +72,7 @@ async function recog1MbAudio(directoryPath, fileName){ //файлы не бол�
     return new Promise(
         function(resolve){
             yandex_speech.ASR({
-                developer_key: 'c19623d5-58d2-4f9a-898f-bdabd39bb431',
+                developer_key: config.YANDEX_API,
                 file: directoryPath + fileName
             },
             function (err, httpResponse, result) {
