@@ -1,6 +1,8 @@
 const config  = require('./config')
 const fs = require('fs');
 const path = require('path');
+const xml2js = require('xml2js')
+
 
 const { exec } = require('child_process');
 var yandex_speech = require('yandex-speech');
@@ -84,11 +86,24 @@ async function recog1MbAudio(directoryPath, fileName){ //файлы не бол�
                 developer_key: config.YANDEX_API,
                 file: directoryPath + fileName
             },
-            function (err, httpResponse, result) {
+            function (err, httpResponse, resultXml) {
                 if (err) console.error(err)
-                else resolve( {'filename':fileName, 'result': result} )
+                else {
+                    xml2js.parseString(resultXml, (err, resultJSON) => {
+                        if (err) {
+                            console.error(err);
+                            return;
+                        }
+                        console.log(resultJSON);
+                        resolve( {'filename':fileName, 'result': resultJSON} )
+                    });
+                    
+                }
             });
         });
 }
+
+
+
 
 module.exports = recognizeAudio

@@ -19,6 +19,7 @@ const icon_download = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 1
 
 const icon_play = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M9.5 15.584V8.416a.5.5 0 01.77-.42l5.576 3.583a.5.5 0 010 .842l-5.576 3.584a.5.5 0 01-.77-.42z"></path><path fill-rule="evenodd" d="M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zM1 12C1 5.925 5.925 1 12 1s11 4.925 11 11-4.925 11-11 11S1 18.075 1 12z"></path></svg>';
 
+
 const FORMAT_FILES_COLUMNS = [
     {
         field: 'id', 
@@ -35,18 +36,21 @@ const FORMAT_FILES_COLUMNS = [
     {
         field: 'recognizedText', 
         editor: 'textarea',
-        formatter:'text',
-        editorParams:{autocomplete:"true", allowEmpty:true,listOnEmpty:true, valuesLookup:true, freetext:true},
+        width:200,
         cellEdited: async function (cell){ 
             let res = await sql( `UPDATE files SET recognizedText='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
         },
     },
     {
+        // TODO добавить возможность "заказывать" распознавание и разрывать сессию
         title: "Распознавание",
         field: 'recognitionStatus',
         hozAlign:  "center",  
         cellClick: async function(e, cell){
             const REC_ID = cell.getRow().getData().id
+            
+
+
             
             
             cell.getTable().updateData([{id: REC_ID, recButton:'Обработка...'}])
@@ -63,7 +67,7 @@ const FORMAT_FILES_COLUMNS = [
                 },
                 body: JSON.stringify({
                     inputPath: UPLOAD_PATH + cell.getRow().getData().name, 
-                    fragmentDuration:60
+                    fragmentDuration:15
                 }
               )
             });
@@ -74,9 +78,15 @@ const FORMAT_FILES_COLUMNS = [
                 
                 let res = await response.json()
                 console.log("Распознан текст", res)
-                cell.getTable().updateData([{id: REC_ID, recognizedText:JSON.stringify(res.data)}])
+                const fragments = res.data
+                text = ''
+                for (let i in fragments){
+                    text += i + ':'+ fragments[i].recognitionResults.variant[0]._ + ' '
+                }
+                
+                cell.getTable().updateData([{id: REC_ID, recognizedText:text}])
                     .then(async function(){
-                     let sqlres = await sql( `UPDATE files SET recognizedText='${JSON.stringify(res.data)}' WHERE id=${cell.getRow().getData().id}`);
+                     let sqlres = await sql( `UPDATE files SET recognizedText='${text}' WHERE id=${cell.getRow().getData().id}`);
                 })
             }
         } 
@@ -119,12 +129,21 @@ function downloadFile(event, path){
 /**
 * Поведение строки поиска
 */
-srch.addEventListener('keydown', function (e) {
-    let where = `  WHERE description like '%${srch.value}%' `
-    if (e.code == 'Enter') srch.blur(), loadDataToDable(STANDARD_QUERY + where);
+srch.addEventListener('keydown', function(e){
+        if (e.code == 'Enter') {
+            srch.blur() 
+            startSearch()
+        }
+    
 });
 
-
+function startSearch() {
+    let where = ''
+    if (!(srch.value === undefined || srch.value === '')){
+    where = `  WHERE (description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
+    }
+    loadDataToDable(STANDARD_QUERY + where);
+}
 /**
  * MAIN CODE -  начало основного кода
  */
