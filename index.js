@@ -2,12 +2,13 @@
    Настройки
 */
 
-
-const config  = require('./config')
-
 const express = require('express');
 const mysql = require('mysql')
 const fileUpload = require('express-fileupload');
+
+
+const config  = require('./config')
+const recognizeAudio = require('./recognizeAudio')
 
 const app = express()
 
@@ -60,6 +61,7 @@ app.post('/api/sql', function(req, res) {
     conn.end();
 });
 
+
 /** 
     Перенаправление запроса к базе данных возвращение только данных таблицы
 */
@@ -76,6 +78,19 @@ app.post('/api/sql/dataOnly', function(req, res) {
         res.send(JSON.stringify(data));
     });
     conn.end();
+});
+
+/** 
+    Перенаправление запроса к базе данных
+*/
+app.post('/api/speech-recognition', function(req, res) {
+    
+    const {inputPath, fragmentDuration} = req.body
+    
+    recognizeAudio('public_html/' + inputPath, 'temp_audio/', fragmentDuration, function(data){
+        console.log('\n  Удалось обработать кусочки:', data)
+        res.send(JSON.stringify({data}))
+    })
 });
 
 app.listen(config.PORT, function() {

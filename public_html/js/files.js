@@ -7,6 +7,8 @@ const STANDARD_QUERY = `SELECT id,
                         '>>>' as play,
                         'Просмотр' as view,
                         description, 
+                        recognizedText,
+                        recognitionStatus,
                         oldName, 
                         name, 
                         fileType,
@@ -14,6 +16,7 @@ const STANDARD_QUERY = `SELECT id,
                     FROM files `;   
 
 const icon_download = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M7.47 10.78a.75.75 0 001.06 0l3.75-3.75a.75.75 0 00-1.06-1.06L8.75 8.44V1.75a.75.75 0 00-1.5 0v6.69L4.78 5.97a.75.75 0 00-1.06 1.06l3.75 3.75zM3.75 13a.75.75 0 000 1.5h8.5a.75.75 0 000-1.5h-8.5z"></path></svg>';
+
 const icon_play = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M9.5 15.584V8.416a.5.5 0 01.77-.42l5.576 3.583a.5.5 0 010 .842l-5.576 3.584a.5.5 0 01-.77-.42z"></path><path fill-rule="evenodd" d="M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zM1 12C1 5.925 5.925 1 12 1s11 4.925 11 11-4.925 11-11 11S1 18.075 1 12z"></path></svg>';
 
 const FORMAT_FILES_COLUMNS = [
@@ -29,6 +32,56 @@ const FORMAT_FILES_COLUMNS = [
             let res = await sql( `UPDATE files SET description='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
         },
     },
+    {
+        field: 'recognizedText', 
+        editor: 'textarea',
+        formatter:'text',
+        editorParams:{autocomplete:"true", allowEmpty:true,listOnEmpty:true, valuesLookup:true, freetext:true},
+        cellEdited: async function (cell){ 
+            let res = await sql( `UPDATE files SET recognizedText='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
+        },
+    },
+    {
+        title: "Распознавание",
+        field: 'recognitionStatus',
+        hozAlign:  "center",  
+        cellClick: async function(e, cell){
+            const REC_ID = cell.getRow().getData().id
+            
+            
+            cell.getTable().updateData([{id: REC_ID, recButton:'Обработка...'}])
+                .then(async function(){
+                     let sqlres = await sql( `UPDATE files SET recognitionStatus='Обработка' WHERE id=${REC_ID}`);
+                })
+            
+            
+            
+            let response = await fetch('/api/speech-recognition', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    inputPath: UPLOAD_PATH + cell.getRow().getData().name, 
+                    fragmentDuration:60
+                }
+              )
+            });
+            if (response.ok) {
+                cell.getTable().updateData([{id: cell.getRow().getData().id, recButton:'Готово'}]).then(async function(){
+                     let sqlres = await sql( `UPDATE files SET recognitionStatus='Готово' WHERE id=${REC_ID}`);
+                })
+                
+                let res = await response.json()
+                console.log("Распознан текст", res)
+                cell.getTable().updateData([{id: REC_ID, recognizedText:JSON.stringify(res.data)}])
+                    .then(async function(){
+                     let sqlres = await sql( `UPDATE files SET recognizedText='${JSON.stringify(res.data)}' WHERE id=${cell.getRow().getData().id}`);
+                })
+            }
+        } 
+    },
+    
     {
         field:'play',
         formatter: () => {return icon_play },
@@ -52,6 +105,7 @@ const FORMAT_FILES_COLUMNS = [
         cellClick: function(e, cell){ downloadFile(e, UPLOAD_PATH + cell.getRow().getData().name);} 
     },
 ];
+
 
 /**
 *  downloadFile

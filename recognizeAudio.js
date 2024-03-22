@@ -14,23 +14,29 @@ var yandex_speech = require('yandex-speech');
 /**
  * @brief Разбивает большой аудиофайл на несколько фрагментов и распознаёт в них текст
  * @param [in] inputPath - путь к обрабатываемому файлу
- * @param [in] outputDir - папка для хранения временных файлов фрагментов
+ * @param [in] tempDir - папка для хранения временных файлов фрагментов
  * @param [in] segmentSize_sec - размеры фрагментов
  * @param [out] callback - функция, которая запускается, когда файлы обработаны
  * @return 
  */
-function recognizeAudio(inputPath, outputDir, segmentSize_sec = 5, callback){
+function recognizeAudio(inputPath, tempDir, segmentSize_sec = 60, callback) {
     const fileName = path.basename(inputPath);
-    const command = `ffmpeg -i ${inputPath} -f segment -segment_time ${segmentSize_sec} ${outputDir}${fileName}_FRG_%05d.mp3`;
+
+    const outputDir = tempDir + fileName + '/'
+    if (!fs.existsSync(outputDir))
+        fs.mkdirSync(outputDir)
+
+    const command = `ffmpeg -i ${inputPath} -f segment -segment_time ${segmentSize_sec} -b:a 128k ${outputDir}FRG_${segmentSize_sec}sec_%05d.mp3`
+
     exec(command, async (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error: ${error.message}`);
-          return;
-      }
-      if (stderr) {
-        console.error(`stderr: ${stderr}`);
-      }
-      console.log(`Аудиофайл успешно разделен на фрагменты по ${segmentSize_sec}  секунд.`);
+        if (error) {
+            console.error(`Error: ${error.message}`);
+            return;
+        }
+        if (stderr) {
+            console.error(`stderr: ${stderr}`);
+        }
+        console.log(`Аудиофайл успешно разделен на фрагменты по ${segmentSize_sec}  секунд.`);
         recogAudioFragmInDir(outputDir).then(callback);
         console.log('ГОТОВО')
     });
@@ -52,9 +58,12 @@ async function recogAudioFragmInDir(directoryPath) {
         console.log('Файлы в указанной папке:');
         for (let i in files){
             console.log('Обрабатываю файл', files[i])
+            
             let r = await recog1MbAudio(directoryPath, files[i])
-            console.log('________________', files[i], 'ГОТОВ\n\n')
-            res[r[0]] = r[1]
+            res[r.filename] = r.result
+            
+            console.log(files[i], 'ГОТОВ\n\n')
+            
             fs.unlink(directoryPath + files[i],  
                       err => {if (err) {console.error(`Ошибка при удалении файла ${directoryPath + files[i]}:`, err)} else {console.log(`Файл ${directoryPath + files[i]} успешно удален`)}})
         }
@@ -76,13 +85,8 @@ async function recog1MbAudio(directoryPath, fileName){ //файлы не бол�
                 file: directoryPath + fileName
             },
             function (err, httpResponse, result) {
-                if (err) {
-                    console.error(err);
-                } else {
-//                            console.log('Файл', file)
-//                            console.log(httpResponse.statusCode, result)
-                    resolve([fileName,result])
-                }
+                if (err) console.error(err)
+                else resolve( {'filename':fileName, 'result': result} )
             });
         });
 }
