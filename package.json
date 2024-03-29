@@ -1,24 +1,37 @@
 {
   "name": "mediArch",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "Программа для ведения архива медиафайлов",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
-    "start": "node index",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "electron-forge start",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
   },
   "keywords": [],
-  "author": "",
+  "author": "Ilya Petrov",
   "license": "ISC",
   "dependencies": {
     "@types/node": "^18.0.6",
     "child_process": "^1.0.2",
     "cors": "^2.8.5",
+    "electron-squirrel-startup": "^1.0.0",
     "express": "^4.18.2",
     "express-fileupload": "^1.4.0",
     "mysql": "^2.18.1",
     "node-fetch": "^3.2.6",
     "xml2js": "^0.6.2",
     "yandex-speech": "^0.0.14"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.3.1",
+    "@electron-forge/maker-deb": "^7.3.1",
+    "@electron-forge/maker-rpm": "^7.3.1",
+    "@electron-forge/maker-squirrel": "^7.3.1",
+    "@electron-forge/maker-zip": "^7.3.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.3.1",
+    "@electron-forge/plugin-fuses": "^7.3.1",
+    "electron": "^29.1.6"
   }
 }
