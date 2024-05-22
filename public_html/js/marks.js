@@ -26,17 +26,36 @@ var table = new Tabulator("#marksTable", {
     autoColumns: true,
 //    autoColumnsDefinitions: FORMAT_FILES_COLUMNS
 });
-btnAddRow.onclick = addMark;
-function addMark(){
-    console.log(previewVideo.currentTime)
-    table.addRow({start_time:String(previewVideo.currentTime).toHHMMSS()});
-}
+
+
 table.on('tableBuilt', function(e){ 
     console.log('ready!')
     loadDataToDable(QUERY_MARKS)
     
 });
 
+
+btnAddRow.onclick = addMark;
+/*
+* Добавление метки
+*/
+async function addMark(){
+    console.log(previewVideo.currentTime)
+    let timestr = String(previewVideo.currentTime).toHHMMSS();
+    
+    let query = `INSERT INTO marks (start_time, file_id) VALUES ('${timestr}', ${file_id})`;
+    let res = await sql(query);
+    console.log(res);
+    if (res.errors) {
+        alert('Ошибка при добавлении в таблицу');
+        return;
+    }
+    table.addRow({id:res.data.insertId, start_time:timestr});
+}
+
+/**
+*   Преобразование секунд в обычную строку
+*/
 String.prototype.toHHMMSS = function () {
     var sec_num = parseInt(this, 10); // don't forget the second param
     var hours   = Math.floor(sec_num / 3600);
