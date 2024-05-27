@@ -3,17 +3,20 @@ const FILE_ID = urlParams.get('file_id');
 const QUERY_MARKS = `SELECT  id,  
                             start_time, 
                             tags, 
-                            describtion
+                            describtion,
+                            hide
                         FROM marks
                         WHERE 
-                        file_id = ${FILE_ID} ORDER BY start_time ASC`;
+                        file_id = ${FILE_ID} and hide <> 1 ORDER BY start_time ASC`;
 const FORMAT_MARKS_COLUMNS = [   
     {
         field: 'id',
+        hozAlign:  "center",
         width:40
     },
     {
         field: 'start_time',
+        hozAlign:  "center",
         width:128
     },
     {
@@ -23,6 +26,21 @@ const FORMAT_MARKS_COLUMNS = [
             let edit_result = await sql(
                 `UPDATE marks SET describtion = '${cell.getValue()}' WHERE id = ${cell.getRow().getData().id}`)
             if (edit_result.errors) {alert('Ошибка при сохранении описания метки в БД')}
+        }
+    },
+    {
+        title:'',
+        field: 'hide',
+        width:16,
+        formatter: () => {return 'X' },
+        hozAlign:  "center",
+        cellClick: async function(e,cell){
+            let ans = confirm('Вы уверены, что хотите удалить метку?')
+            if(!ans)return;
+            let edit_result = await sql(
+                `UPDATE marks SET hide = 1 WHERE id = ${cell.getRow().getData().id}`)
+            if (edit_result.errors) {alert('Ошибка при сохранении описания метки в БД')}
+            cell.getRow().delete()
         }
     }
 ]
@@ -41,8 +59,10 @@ async function runMarks(){
         ajaxContentType: "json",
         layout: "fitColumns",
         autoColumns: true,
+        selectableRows:1,
         autoColumnsDefinitions: FORMAT_MARKS_COLUMNS
     });
+    
     
     table.on('tableBuilt', function(e){ 
     table.setData("api/sql/dataOnly", {
@@ -50,7 +70,8 @@ async function runMarks(){
             'inserts': ''
         }, "POST");
     });
-    btnAddRow.onclick = function(){ addMark(table, FILE_ID) };
+    
+    btnAddRow.onclick = function(){ addMark(table, FILE_ID);};
     
     let fileName = await getFileName(FILE_ID);
     playFile(null, fileName, true);
@@ -58,7 +79,7 @@ async function runMarks(){
     previewVideo.ontimeupdate = function(e){ 
         console.log(previewVideo.currentTime)
         timeMonitor.innerHTML = String(previewVideo.currentTime).toHHMMSS();
-    console.log(table.getData())
+        console.log(table.getData())
     }
 }
 runMarks();
@@ -91,10 +112,12 @@ async function addMark(_table, _file_id){
         alert('Ошибка при добавлении в таблицу');
         return;
     }
-    _table.addRow({ 
+    let row = _table.addRow({ 
         id: res.data.insertId, 
         start_time: timestr 
     });
+    _table.deselectRow()
+    _table.selectRow(res.data.insertId);
 }
 
 /**
