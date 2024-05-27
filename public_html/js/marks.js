@@ -6,10 +6,26 @@ const QUERY_MARKS = `SELECT  id,
                             describtion
                         FROM marks
                         WHERE 
-                        file_id = ${FILE_ID}`;
-const FORMAT_MARKS_COLUMNS = {
-    //todo
-}
+                        file_id = ${FILE_ID} ORDER BY start_time ASC`;
+const FORMAT_MARKS_COLUMNS = [   
+    {
+        field: 'id',
+        width:40
+    },
+    {
+        field: 'start_time',
+        width:128
+    },
+    {
+        field: 'describtion',
+        editor: 'textarea',
+        cellEdited: async function(cell){
+            let edit_result = await sql(
+                `UPDATE marks SET describtion = '${cell.getValue()}' WHERE id = ${cell.getRow().getData().id}`)
+            if (edit_result.errors) {alert('Ошибка при сохранении описания метки в БД')}
+        }
+    }
+]
 
 
 
@@ -25,7 +41,7 @@ async function runMarks(){
         ajaxContentType: "json",
         layout: "fitColumns",
         autoColumns: true,
-        //autoColumnsDefinitions: FORMAT_MARKS_COLUMNS
+        autoColumnsDefinitions: FORMAT_MARKS_COLUMNS
     });
     
     table.on('tableBuilt', function(e){ 
@@ -38,6 +54,12 @@ async function runMarks(){
     
     let fileName = await getFileName(FILE_ID);
     playFile(null, fileName, true);
+    
+    previewVideo.ontimeupdate = function(e){ 
+        console.log(previewVideo.currentTime)
+        timeMonitor.innerHTML = String(previewVideo.currentTime).toHHMMSS();
+    console.log(table.getData())
+    }
 }
 runMarks();
 /**
