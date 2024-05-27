@@ -1,60 +1,84 @@
-// marks.js
-
-
 const urlParams = new URLSearchParams(document.location.search)
-var file_id = urlParams.get('file_id');
+const FILE_ID = urlParams.get('file_id');
 const QUERY_MARKS = `SELECT  id,  
                             start_time, 
                             tags, 
                             describtion
                         FROM marks
                         WHERE 
-                        file_id = ${file_id}`;
+                        file_id = ${FILE_ID}`;
+const FORMAT_MARKS_COLUMNS = {
+    //todo
+}
 
-const file_name = 'matrix.mp4'
-playFile(null, file_name , true)
+
+
 
 /**
- * MAIN CODE -  начало основного кода
+ * @brief Главная функция
  */
-var table = new Tabulator("#marksTable", {
-    height:"100%",
-    layout: "fitColumns",
-    placeholder: "Введите поисковую фразу",
-    ajaxContentType: "json",
-    layout: "fitColumns",
-    autoColumns: true,
-//    autoColumnsDefinitions: FORMAT_FILES_COLUMNS
-});
-
-
-table.on('tableBuilt', function(e){ 
-    console.log('ready!')
-    loadDataToDable(QUERY_MARKS)
+async function runMarks(){
+    var table = new Tabulator("#marksTable", {
+        height:"100%",
+        layout: "fitColumns",
+        placeholder: "Введите поисковую фразу",
+        ajaxContentType: "json",
+        layout: "fitColumns",
+        autoColumns: true,
+        //autoColumnsDefinitions: FORMAT_MARKS_COLUMNS
+    });
     
-});
-
-
-btnAddRow.onclick = addMark;
-/*
-* Добавление метки
+    table.on('tableBuilt', function(e){ 
+    table.setData("api/sql/dataOnly", {
+            'query': QUERY_MARKS,
+            'inserts': ''
+        }, "POST");
+    });
+    btnAddRow.onclick = function(){ addMark(table, FILE_ID) };
+    
+    let fileName = await getFileName(FILE_ID);
+    playFile(null, fileName, true);
+}
+runMarks();
+/**
+* @brief Получаем название файла по его id
 */
-async function addMark(){
+async function getFileName(file_id){
+    // TODO загружать имя файла по file_id
+    const query = `SELECT name FROM files WHERE id = ${file_id} LIMIT 1`;
+    let res = await sql(query);
+    console.log(res);
+    if (res.errors) { alert('Не удалось выполнить запрос к БД'); return null; }
+    if (res.data == null){ alert('Не удалось найти файл с номером ${file_id}'); return null; }
+    
+    return res.data[0].name; // [0] так как мы ищем всего лишь один элемент, но res.data - это массив
+}
+
+
+/**
+* @brief Добавление метки
+*/
+async function addMark(_table, _file_id){
     console.log(previewVideo.currentTime)
     let timestr = String(previewVideo.currentTime).toHHMMSS();
     
-    let query = `INSERT INTO marks (start_time, file_id) VALUES ('${timestr}', ${file_id})`;
+    const query = `INSERT INTO marks (start_time, file_id) VALUES ('${timestr}', ${_file_id})`;
     let res = await sql(query);
     console.log(res);
     if (res.errors) {
         alert('Ошибка при добавлении в таблицу');
         return;
     }
-    table.addRow({id:res.data.insertId, start_time:timestr});
+    _table.addRow({ 
+        id: res.data.insertId, 
+        start_time: timestr 
+    });
 }
 
 /**
-*   Преобразование секунд в обычную строку
+*   @brief Преобразование секунд в обычную строку
+*   Пример использования: "602".toHHMMSS() // Результат: "00:10:02"
+*   @return Строка содержащая время в формате hh:mm:ss 
 */
 String.prototype.toHHMMSS = function () {
     var sec_num = parseInt(this, 10); // don't forget the second param
@@ -68,14 +92,4 @@ String.prototype.toHHMMSS = function () {
     return hours+':'+minutes+':'+seconds;
 }
 
-/**
- * @brief Запрос к БД. 
- * @return Обновляет таблицу на странице.
- */
-function loadDataToDable( q) {
-    table.setData("api/sql/dataOnly", {
-       'query': q,
-        'inserts': ''
-    }, "POST");
-}
 
