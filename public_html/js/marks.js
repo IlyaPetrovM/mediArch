@@ -2,22 +2,38 @@ const urlParams = new URLSearchParams(document.location.search)
 const FILE_ID = urlParams.get('file_id');
 const QUERY_MARKS = `SELECT  id,  
                             start_time, 
+                            time_msec,
                             tags, 
                             describtion,
                             hide
                         FROM marks
                         WHERE 
-                        file_id = ${FILE_ID} and hide <> 1 ORDER BY start_time ASC`;
+                        file_id = ${FILE_ID} and hide <> 1 ORDER BY time_msec ASC`;
+
 const FORMAT_MARKS_COLUMNS = [   
     {
         field: 'id',
         hozAlign:  "center",
+        visible: false,
         width:40
     },
     {
+        title:'Время',
         field: 'start_time',
         hozAlign:  "center",
-        width:128
+        width:150,
+        visible: false
+    },
+    {
+        title:'Время',
+        field: 'time_msec',
+        hozAlign:  "center",
+        width:128,
+        editor:timeEditor,
+        formatter: function(cell){ return String(cell.getValue()/1000).toHHMMSS()},
+        cellEdited: async function(cell){
+            console.log('Отредактировано. Новое значение:', cell.getValue())
+        }
     },
     {
         field: 'describtion',
@@ -77,12 +93,77 @@ async function runMarks(){
     playFile(null, fileName, true);
     
     previewVideo.ontimeupdate = function(e){ 
-        console.log(previewVideo.currentTime)
-        timeMonitor.innerHTML = String(previewVideo.currentTime).toHHMMSS();
-        console.log(table.getData())
+        timeMonitor.innerHTML = toHHMMSSsss(previewVideo.currentTime*1000);
+        goToMark(Number.parseInt(previewVideo.currentTime*1000), table);
     }
 }
 runMarks();
+
+
+
+/**
+* @brief Редактор времени клипа в фромате ЧЧ:ММ:СС:ссс
+* @param cell       - the cell component for the editable cell
+* @param onRendered - function to call when the editor has been rendered
+* @param success    - function to call to pass thesuccessfully updated value to Tabulator
+* @param cancel     - function to call to abort the edit and return to a normal cell
+* @param editorParams - params object passed into the editorParams column definition property
+*/
+function timeEditor(cell, onRendered, success, cancel, editorParams) {
+    var editor = document.createElement('input')
+    editor.setAttribute('step', '0.001')
+    editor.setAttribute('type', 'time')
+    editor.style.width = "100%";
+    console.log(editor.value)
+    editor.value = toHHMMSSsss(cell.getValue())
+
+    onRendered(function () {
+        editor.focus();
+        editor.style.css = "100%";
+    });
+
+    function successFunc() {
+        console.log(editor.value, toMillis(editor.value))
+        success(toMillis(editor.value));
+    }
+
+    function waitForEnter(e) {
+        if (e.key == 'Enter') successFunc();
+        if (e.key == 'Escape') cancel();
+    }
+    editor.addEventListener("keydown", waitForEnter);
+    editor.addEventListener("edited", successFunc);
+    editor.addEventListener("blur", successFunc);
+    return editor;
+}
+
+
+/**
+ * @brief Преобразовать в миллисекунды
+ * @param [in] time_str в формате ЧЧ:ММ:СС.ссс
+ * @return время в миллисекундак, начиная от 0 
+ */
+function toMillis(time_str){
+    let parts = time_str.split('.')
+    let hhmmss = parts[0].split(':')
+    let hh = hhmmss[0]
+    let mm = hhmmss[1]
+    let ss = hhmmss[2]
+    let SSS = Number.parseInt(parts[1])
+    return (hh*60*60 + mm*60 + ss)*1000 + SSS;
+}
+
+
+
+/**
+* @brief Переходим на нужную метку
+* @param [in] millis время миллисекундах
+*/
+function toHHMMSSsss(millis) {
+    return String(Math.floor(millis/1000)).toHHMMSS() + '.' + String(Math.floor((millis))%1000).padStart(3, '0');
+}
+
+
 /**
 * @brief Получаем название файла по его id
 */
@@ -99,13 +180,41 @@ async function getFileName(file_id){
 
 
 /**
+* @brief Переходим на нужную метку
+*/
+async function goToMark(curtime_ms, tab) {
+    let rows = tab.getRows();
+    // линейный поиск метки
+    for (let i = 0; i < rows.length-1; i++) {
+        if (rows[i].getData().time_msec <= curtime_ms && curtime_ms < rows[i+1].getData().time_msec){
+            tab.deselectRow()
+            rows[i].select();
+            rows[i].getCell('describtion').edit()
+            return;
+        }
+    }
+    tab.deselectRow()
+    rows[rows.length-1].select();
+    rows[rows.length-1].getCell('describtion').edit()
+}
+
+
+
+
+/**
 * @brief Добавление метки
 */
 async function addMark(_table, _file_id){
     console.log(previewVideo.currentTime)
-    let timestr = String(previewVideo.currentTime).toHHMMSS();
-    
-    const query = `INSERT INTO marks (start_time, file_id) VALUES ('${timestr}', ${_file_id})`;
+    let current_time_sec = Number.parseInt(previewVideo.currentTime)
+    let cur_time_msec = Number.parseInt(previewVideo.currentTime*1000)
+    for(let i=0; i<_table.getData().length; i++){
+        if (Number.parseInt(_table.getData()[i].time_msec) == cur_time_msec){
+            console.log('Метка уже существует')
+            return;
+        }
+    }
+    const query = `INSERT INTO marks (start_time, time_msec, file_id) VALUES ('${String(previewVideo.currentTime).toHHMMSS()}', '${Number.parseInt(previewVideo.currentTime*1000)}', ${_file_id})`;
     let res = await sql(query);
     console.log(res);
     if (res.errors) {
@@ -114,11 +223,16 @@ async function addMark(_table, _file_id){
     }
     let row = _table.addRow({ 
         id: res.data.insertId, 
-        start_time: timestr 
+        time_msec: Number.parseInt(previewVideo.currentTime*1000),
+        start_time: String(previewVideo.currentTime).toHHMMSS() 
     });
     _table.deselectRow()
     _table.selectRow(res.data.insertId);
+    _table.setSort("time_msec", "asc");
+    
 }
+
+
 
 /**
 *   @brief Преобразование секунд в обычную строку
