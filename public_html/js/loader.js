@@ -28,9 +28,12 @@ async function load() {
 
     for (let i = 0; i < files.length; i++) {
         let load_res = await loadFileXhr(files[i], progressPrint); // с помощью await ждём загрузки каждого файла по отдельности
+        let fext = getUrlExtention(files[i].name)
+        let ftype = getFileType(fext)
+        
         const sql_res = await sql('INSERT INTO ?? (??) VALUES ( ? ) ',
-            ['files', ['oldName', 'name', 'filetype'],
-                [files[i].name, transliterate(files[i].name), getUrlExtention(files[i].name)]]);
+            ['files', ['oldName', 'name', 'fileExt', 'filetype'],
+                [files[i].name, transliterate(files[i].name), fext, ftype]]);
 
         if (load_res.errors) console.log('Ошибка загрузки файла')
         if (sql_res.errors) console.log('Ошибка выполнения SQL-запроса')
@@ -48,6 +51,52 @@ function getUrlExtention( url ) {
   return url.split(/[#?]/)[0].split('.').pop().trim().toLowerCase();
 }
 
+
+/**
+* Определяет тип файла по его расширению
+*/
+function getFileType(ext) {
+    let typ = 'other'
+    switch (ext.toLowerCase()) {
+        case 'mkv':
+        case 'mp4':
+        case 'mov':
+        case 'avi':
+        case 'm4v':
+            typ = 'video'
+            break;
+        case 'ogg':
+        case 'aac':
+        case 'mp3':
+        case 'wav':
+        case 'm4a':
+            typ = 'audio'
+            break;
+        case 'gif':
+        case 'bmp':
+        case 'svg':
+        case 'png':
+        case 'tif':
+        case 'jpg':
+        case 'jpeg':
+        case 'cr2':
+            typ = 'image'
+            break;
+        case 'xlsx':
+        case 'xls':
+        case 'csv':
+        case 'pdf':
+        case 'docx':
+        case 'doc':
+        case 'fb2':
+        case 'djvu':
+        case 'djv':
+        case 'txt':
+            typ = 'text'
+    }
+
+    return typ;
+}
 
 
 /**

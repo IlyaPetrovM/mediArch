@@ -1,3 +1,9 @@
+/**
+TODO при загрузке абсолютно нового видео - нужно создать самую первую запись на 00-00-00
+нужно показывать опись только для определённых типов файлов - только для видео и аудио
+
+*/
+
 const urlParams = new URLSearchParams(document.location.search)
 const FILE_ID = urlParams.get('file_id');
 const QUERY_MARKS = `SELECT  id,  
@@ -171,7 +177,7 @@ async function getFileName(file_id){
     // TODO загружать имя файла по file_id
     const query = `SELECT name FROM files WHERE id = ${file_id} LIMIT 1`;
     let res = await sql(query);
-    console.log(res);
+    
     if (res.errors) { alert('Не удалось выполнить запрос к БД'); return null; }
     if (res.data == null){ alert('Не удалось найти файл с номером ${file_id}'); return null; }
     

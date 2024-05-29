@@ -13,6 +13,7 @@ const STANDARD_QUERY = `SELECT id,
                         oldName, 
                         name, 
                         fileType,
+                        fileExt,
                         'Скачать' as download,
                         'Опись' as marks
                     FROM files `;   
@@ -50,6 +51,7 @@ const FORMAT_FILES_COLUMNS = [
             let res = await sql( `UPDATE files SET recognizedText='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
         },
     },
+    //'recognitionStatus'
     {
         // TODO добавить возможность "заказывать" распознавание и разрывать сессию
         title: "Распознавание",
@@ -96,20 +98,36 @@ const FORMAT_FILES_COLUMNS = [
             }
         } 
     },
-    
+    //fileType
     {
+    field: 'fileType', 
+    editor: 'list',
+    editorParams:{autocomplete:"true", allowEmpty:true,listOnEmpty:true, valuesLookup:true, freetext:false, values:["video", "audio", "text", "other"]},
+    cellEdited: async function (cell){ 
+        let res = await sql( `UPDATE files SET fileType='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
+    },
+    },
+    //play
+    { 
         field:'play',
         formatter: () => {return ICON_PLAY },
         width:     20, 
         hozAlign:  "center",
         cellClick: function(e, cell){ playFile(e, cell.getRow().getData().name, true);} 
     },
+    //marks
     {
         field:'marks',
-        formatter: (cell) => {return `<a href='marks.html?file_id=${cell.getRow().getData().id}'>${ICON_TEXT}</a>`; },
+        formatter: (cell) => {
+            if (cell.getRow().getData().fileType == 'audio' || cell.getRow().getData().fileType == 'video')
+                return `<a href='marks.html?file_id=${cell.getRow().getData().id}'>${ICON_TEXT}</a>`
+            else 
+                return ''
+        },
         width:     20, 
         hozAlign:  "center"
     },
+    
     {
         title: 'Просмотр',
         field: 'view',
@@ -153,7 +171,7 @@ srch.addEventListener('keydown', function(e){
 function startSearch() {
     let where = ''
     if (!(srch.value === undefined || srch.value === '')){
-        where = `  WHERE (description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
+        where = `  WHERE (description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
     }
     loadDataToTable(STANDARD_QUERY + where);
 }
