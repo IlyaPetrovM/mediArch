@@ -27,13 +27,21 @@ async function load() {
     print('-- ЗАГРУЖАЕМ --')
 
     for (let i = 0; i < files.length; i++) {
+        print(`... грузим на сервер ...`)
         let load_res = await loadFileXhr(files[i], progressPrint); // с помощью await ждём загрузки каждого файла по отдельности
+        print(`... загружен на сервер ...`)
         let fext = getUrlExtention(files[i].name)
         let ftype = getFileType(fext)
+        print(`... читаем EXIF информацию файла ...`)
+        let exif = await getExif(files[i])
+        let dateCreated = exif.DateTime
+        let exif_str = JSON.stringify(exif)
+        console.log( 'длина EXIF', exif_str.length, exif)
+        print(`... заносим информацию в БД ...`)
         
         const sql_res = await sql('INSERT INTO ?? (??) VALUES ( ? ) ',
-            ['files', ['oldName', 'name', 'fileExt', 'filetype'],
-                [files[i].name, transliterate(files[i].name), fext, ftype]]);
+            ['files', ['oldName', 'name', 'fileExt', 'filetype', 'date_created', 'exif'],
+                [files[i].name, transliterate(files[i].name), fext, ftype, dateCreated, exif_str]]);
 
         if (load_res.errors) console.log('Ошибка загрузки файла')
         if (sql_res.errors) console.log('Ошибка выполнения SQL-запроса')
@@ -42,6 +50,15 @@ async function load() {
     }
     print(`-- ГОТОВО --`);
 
+}
+
+async function getExif(file) {
+    EXIF.enableXmp();
+    return new Promise(resolve => {
+        EXIF.getData(file, function() {
+            return resolve(EXIF.getAllTags(this));
+        })
+    })
 }
 
 /**
@@ -63,12 +80,15 @@ function getFileType(ext) {
         case 'mov':
         case 'avi':
         case 'm4v':
+        case 'wmv':
+        case 'vp9':
             typ = 'video'
             break;
         case 'ogg':
         case 'aac':
         case 'mp3':
         case 'wav':
+        case 'wma':
         case 'm4a':
             typ = 'audio'
             break;
@@ -77,6 +97,7 @@ function getFileType(ext) {
         case 'svg':
         case 'png':
         case 'tif':
+        case 'tiff':
         case 'jpg':
         case 'jpeg':
         case 'cr2':
