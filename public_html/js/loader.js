@@ -21,6 +21,7 @@ loaderForm.addEventListener('submit', (e) => {
 /** 
 Загрузка
     Загрузка нескольких файлов
+    https://stackforgeeks.com/blog/html5-read-video-metadata-of-mp4
 */
 async function load() {
     let files = filesInput.files;
@@ -34,14 +35,19 @@ async function load() {
         let ftype = getFileType(fext)
         print(`... читаем EXIF информацию файла ...`)
         let exif = await getExif(files[i])
-        let dateCreated = exif.DateTime
         let exif_str = JSON.stringify(exif)
         console.log( 'длина EXIF', exif_str.length, exif)
-        print(`... заносим информацию в БД ...`)
         
+        let dateCreated = exif.DateTime
+        if (dateCreated === undefined) dateCreated = exif.DateTimeOriginal
+
+        let gps = getGPSCoords(exif)
+        console.log(gps)
+
+        print(`... заносим информацию в БД ...`)
         const sql_res = await sql('INSERT INTO ?? (??) VALUES ( ? ) ',
-            ['files', ['oldName', 'name', 'fileExt', 'filetype', 'date_created', 'exif'],
-                [files[i].name, transliterate(files[i].name), fext, ftype, dateCreated, exif_str]]);
+            ['files', ['oldName', 'name', 'fileExt', 'filetype', 'date_created','gps_str', 'exif'],
+                [files[i].name, transliterate(files[i].name), fext, ftype, dateCreated, gps, exif_str]]);
 
         if (load_res.errors) console.log('Ошибка загрузки файла')
         if (sql_res.errors) console.log('Ошибка выполнения SQL-запроса')
@@ -50,6 +56,31 @@ async function load() {
     }
     print(`-- ГОТОВО --`);
 
+}
+
+
+function getGPSCoords(exif){
+    // http://the-mostly.ru/konverter_geograficheskikh_koordinat.html
+    /*
+          N+
+          |
+     -W-------E+
+          |
+          S-
+    */
+    /*
+        GPSLatitude
+        GPSLatitudeRef
+        GPSLongitude
+        GPSLongitudeRef
+    */
+    if(exif.GPSLatitude === undefined) return undefined;
+    let gps = {lat:undefined, lng:undefined};
+    gps.lat = exif.GPSLatitude[0] + exif.GPSLatitude[1]/60 + exif.GPSLatitude[2]/(60*60)
+    gps.lng = exif.GPSLongitude[0] + exif.GPSLongitude[1]/60 + exif.GPSLongitude[2]/(60*60)
+    if (exif.GPSLatitudeRef == 'S') gps.lat = -gps.lat
+    if (exif.GPSLongitudeRef == 'W') gps.lng = -gps.lng
+    return gps.lat+', '+gps.lng;
 }
 
 async function getExif(file) {

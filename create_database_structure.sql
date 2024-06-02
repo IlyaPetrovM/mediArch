@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS `files` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT '',
   `time_upload` datetime DEFAULT current_timestamp(),
+  `date_created` datetime DEFAULT NULL,
+  `date_updated` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `oldName` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `fileExt` char(4) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `filetype` char(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -17,6 +19,10 @@ CREATE TABLE IF NOT EXISTS `files` (
   `recognizedText` text COLLATE utf8mb4_unicode_ci DEFAULT '',
   `recognitionStatus` char(50) COLLATE utf8mb4_unicode_ci DEFAULT 'Ещё не распознан',
   `hashsum` varchar(256) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `exif` longblob DEFAULT NULL COMMENT 'метаданные для фотографий',
+  `duration_ms` int(11) DEFAULT NULL,
+  `operator` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'кто создал медиафайл',
+  `gps_str` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
