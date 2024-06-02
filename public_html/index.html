@@ -7,7 +7,7 @@
     <link href="style/imported/google_material_icons.css" rel="stylesheet">
     <link href="style/imported/bootstrap.min.css" rel="stylesheet">
     <link href="style/imported/tabulator.min.css" rel="stylesheet">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body>
@@ -16,7 +16,7 @@
         <!-- Панель навигации -->
 
         <div class=row>
-            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <nav class="col navbar navbar-expand-lg navbar-light bg-light">
                 <div class="container-fluid">
                     <a class="navbar-brand">Архив экспедиции - Вход</a>
                     <nav>
@@ -35,18 +35,18 @@
         </div>
         <div class=row>
             <div class='col'></div>
-        <div class='col-2'>
-<div class='row g-3'>
-            <input name=username id=inputUsername placeholder='email' class='form-control'/>
-            <br>
-            <input name=password id=inputPassword type=password placeholder='Пароль' class='form-control'/>
-            <button onclick='login()' class=' btn btn-primary' >Войти</button>
-            <div id=msg></div>
-        </div>
+            <div class='col-sm'>
+                <div class='row g-3'>
+                    <input name=username id=inputUsername placeholder='email' class='form-control' />
+                    <br>
+                    <input name=password id=inputPassword type=password placeholder='Пароль' class='form-control' />
+                    <button onclick='login()' class=' btn btn-primary'>Войти</button>
+                    <div id=msg></div>
+                </div>
             </div>
             <div class='col'></div>
-    </div>
         </div>
+    </div>
 </body>
 <!--
     <script src='js/sql.js'></script>
