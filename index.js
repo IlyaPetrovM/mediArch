@@ -7,6 +7,8 @@ const mysql = require('mysql')
 const fileUpload = require('express-fileupload');
 const fs = require('fs');
 
+const session = require('express-session')
+const crypto = require('crypto')
 
 
 const config  = require('./config')
@@ -15,15 +17,80 @@ const recognizeAudio = require('./recognizeAudio')
 const app = express()
 
 // Папка public_html теперь обрабатывается как обычный статический сайт
-app.use(express.static('public_html'))
+
 app.use(fileUpload({ createParentPath: true })) // enable files upload
 app.use(express.json());
+
+// Инициализация express-session
+app.use(session({
+  secret: crypto.randomBytes(32).toString('hex'),
+  resave: false,
+  saveUninitialized: true
+}));
+
+const users = [
+    {username: 'ilya', password: '12345678' },
+    {username: 'polya', password: '1234' }
+]
+
+
+
+
+app.get('/index.html',(req, res)=>{
+    console.log('INDEX')
+    res.sendFile(__dirname + '/public_html/index.html');
+})
+
+app.post('/api/login', (req, res) => {
+    const {username, password} = req.body;
+    console.log(username, password)
+
+    // аутентификация. поиск в базе
+    const user = users.find(user => user.username === username && user.password === password);
+    if(user) {
+        req.session.user = user;
+        res.send( {errors: null, data: 'ok', message: 'OK'} );
+    }else{
+         res.send( {errors: true, data: null, message: 'no auth. user does not found'} );
+    }
+})
+
+app.get('/js/*.js', (req, res) => {
+    res.sendFile(__dirname + '/public_html' + req.path);
+})
+
+app.get('/style/*', (req, res) => {
+    res.sendFile(__dirname + '/public_html' + req.path);
+})
+
+app.use((req, res, next) => {
+    // Здесь вы можете добавить вашу логику проверки условий
+    console.log('Проверка!')
+    console.log(req.session)
+
+    if (!req.session.user) {
+        console.log('Пользователь не авторизован!')
+        // Если условие не выполнено, отправляем сообщение об ошибке
+        return res.redirect('/index.html');
+    }
+    // Если условие выполнено, переходим к следующему middleware
+    next();
+})
+app.use(express.static('public_html'))
+
+app.post('/api/session/username', (req, res)=>{
+    res.send({errors: null, data: req.session.user.username})
+})
+
+
+
 
 /** 
     Обработка POST-запросов по адресу ... /api/upload
     в форме должен быть указан этот адрес: <form action='/api/upload'
 */
 app.post('/api/upload', async function(req, res) {
+
     try {
          console.info('-----------file upload Start----------');
         if (!req.files) res.send('ERROR. No file uploaded');
@@ -46,6 +113,7 @@ app.post('/api/upload', async function(req, res) {
 //                console.log('METADATA:', await fileMetadata('index.js'));
         }
         res.send( {errors: null, data: files.name, message: 'OK'} );
+        console.log('SESSION: ',req.session.user)
         
     } catch (err) {
         console.log(err)
