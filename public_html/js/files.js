@@ -102,7 +102,7 @@ const FORMAT_FILES_COLUMNS = [
     {
     field: 'fileType', 
     editor: 'list',
-    editorParams:{autocomplete:"true", allowEmpty:true,listOnEmpty:true, valuesLookup:true, freetext:false, values:["video", "audio", "text", "other"]},
+    editorParams:{autocomplete:"true", allowEmpty:true,listOnEmpty:true, valuesLookup:true, freetext:false, values:['image',"video", "audio", "text", "other"]},
     cellEdited: async function (cell){ 
         let res = await sql( `UPDATE files SET fileType='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
     },

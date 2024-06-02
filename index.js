@@ -12,6 +12,7 @@ const crypto = require('crypto')
 
 
 const config  = require('./config')
+const users  = require('./users')
 const recognizeAudio = require('./recognizeAudio')
 
 const app = express()
@@ -27,14 +28,6 @@ app.use(session({
   resave: false,
   saveUninitialized: true
 }));
-
-const users = [
-    {username: 'ilya', password: '12345678' },
-    {username: 'polya', password: '1234' }
-]
-
-
-
 
 app.get('/index.html',(req, res)=>{
     console.log('INDEX')
