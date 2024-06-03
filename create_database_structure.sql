@@ -26,6 +26,24 @@ CREATE TABLE IF NOT EXISTS `files` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `informants` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `last_name` varchar(512) DEFAULT '',
+  `first_name` varchar(512) DEFAULT '',
+  `middle_name` varchar(512) DEFAULT '',
+  `birthYear` year(4) DEFAULT NULL,
+  `birth` datetime DEFAULT NULL,
+  `comments` text DEFAULT NULL,
+  `contacts` varchar(255) DEFAULT NULL,
+  `keywords` text DEFAULT NULL,
+  `hide` char(1) DEFAULT NULL,
+  `reporter` varchar(512) DEFAULT NULL,
+  `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `date_created` datetime NOT NULL DEFAULT current_timestamp(),
+  `user_created` char(255) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `interfaces` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `tableName` char(50) COLLATE utf8mb4_unicode_ci NOT NULL,

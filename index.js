@@ -69,6 +69,7 @@ app.use((req, res, next) => {
     // Если условие выполнено, переходим к следующему middleware
     next();
 })
+
 app.use(express.static('public_html'))
 
 app.post('/api/session/username', (req, res)=>{
