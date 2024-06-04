@@ -10,6 +10,7 @@ const FORMAT_INFORMANTS_COLUMNS = [
         title: 'Фамилия',
         editor: 'list',
         width:128,
+        headerFilter:"input",
         editorParams: {
             autocomplete: "true",
             allowEmpty: true,
@@ -20,11 +21,32 @@ const FORMAT_INFORMANTS_COLUMNS = [
         cellEdited: async (cell) => {
             let res = await sql(`UPDATE informants SET last_name='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
         },
+
     },
+    //  last_name_at_birth
+    {
+        field: 'last_name_at_birth',
+        title: 'Фамилия при рождении',
+        editor: 'list',
+        width:128,
+        headerFilter:"input",
+        editorParams: {
+            autocomplete: "true",
+            allowEmpty: true,
+            listOnEmpty: true,
+            valuesLookup: true,
+            freetext: true
+        },
+        cellEdited: async (cell) => {
+            let res = await sql(`UPDATE informants SET last_name_at_birth='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
+        },
+    },
+
     //  first_name
     {
         field: 'first_name',
         title: 'Имя',
+        headerFilter:"input",
         editor: 'list',
         width:128,
         editorParams: {
@@ -43,6 +65,7 @@ const FORMAT_INFORMANTS_COLUMNS = [
         field: 'middle_name',
         title: 'Отчество',
         editor: 'list',
+        headerFilter:"input",
         width:128,
         editorParams: {
             autocomplete: "true",
@@ -56,11 +79,24 @@ const FORMAT_INFORMANTS_COLUMNS = [
             if (res.errors) {alert('Не удалось обновить поле');}
         },
     },
+    //  nickname
+    {
+        field: 'nickname',
+        title: 'Короткое имя',
+        editor: 'input',
+        width:128,
+        headerFilter:"input",
+        cellEdited: async (cell) => {
+            let res = await sql(`UPDATE informants SET nickname='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
+        },
+    },
+
      //  birthYear
     {
         field: 'birthYear',
         title: 'г/р',
         editor: 'input',
+        headerFilter:"number",
         width:64,
         editorParams:{
             elementAttributes: {
@@ -95,7 +131,6 @@ const FORMAT_INFORMANTS_COLUMNS = [
             format:"yyyy-MM-dd"
         },
         formatter:function(cell) {
-            console.log(cell.getValue())
             if (cell.getValue() == null ) return null;
             return luxon.DateTime.fromISO(cell.getValue()).toFormat('dd.MM.yyyy');
 //            if (cell.getValue() != null )
@@ -133,6 +168,7 @@ const FORMAT_INFORMANTS_COLUMNS = [
         field: 'contacts',
         title: 'Контакты',
         editor: 'input',
+        headerFilter:"input",
         width:200,
         cellEdited: async (cell) => {
             let res = await sql(`UPDATE informants SET contacts='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
@@ -144,6 +180,7 @@ const FORMAT_INFORMANTS_COLUMNS = [
         field: 'keywords',
         title: 'Ключевые слова',
         editor: 'list',
+        headerFilter:"input",
         editorParams:{autocomplete:"true", allowEmpty:true,listOnEmpty:true, valuesLookup:true, freetext:true},
         cellEdited: async (cell) => {
             let res = await sql(`UPDATE informants SET contacts='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
@@ -156,6 +193,7 @@ const FORMAT_INFORMANTS_COLUMNS = [
         field: 'reporter',
         title: 'Знакомый собиратель',
         editor: 'input',
+        headerFilter:"input",
         cellEdited: async (cell) => {
             let res = await sql(`UPDATE informants SET reporter='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
             if (res.errors) alert('Не удалось обновить поле');
@@ -164,14 +202,16 @@ const FORMAT_INFORMANTS_COLUMNS = [
     //  user_created
     {
         field: 'user_created',
-        title: 'Кто записал'
+        title: 'Кто записал',
+        headerFilter:"input"
     },
     //  date_updated -- BUG!! Перестал отображаться
     {
         field: 'date_updated',
         title: 'Время обновления',
+        visible: false,
         formatter:function(cell) {
-            console.log(cell.getValue())
+//            console.log(cell.getValue())
             if (cell.getValue() !== null )
                 return luxon.DateTime.fromISO(cell.getValue()).toFormat('dd.MM.yyyy hh:mm:ss');
             else return null;
@@ -181,6 +221,7 @@ const FORMAT_INFORMANTS_COLUMNS = [
     {
         field: 'date_created',
         title: 'Время создания',
+        visible: false,
         formatter:(cell) => {
             if (cell.getValue() !== null )
                 return luxon.DateTime.fromISO(cell.getValue()).toFormat('dd.MM.yyyy hh:mm:ss')
@@ -192,6 +233,10 @@ const FORMAT_INFORMANTS_COLUMNS = [
         field: 'hide',
         title: 'Скрыть',
         width:16,
+        headerFilter:"tickCross",
+//        editor:'tickCross',
+        headerFilterParams:{initial:"true"},
+//        headerFilterEmptyCheck:function(value){return value == ''},
         formatter: () => {return 'X' },
         hozAlign:  "center",
         cellClick: async function(e,cell){
@@ -208,8 +253,69 @@ const FORMAT_INFORMANTS_COLUMNS = [
 ];
 var USER = ''
 
-const QUERY_INFORMANTS = `SELECT * FROM informants`;
+const QUERY_SELECT_FROM = `SELECT * FROM informants `;
 
+
+
+/**
+ * @brief Главная функция - для настройки таблицы и событий
+ */
+async function runInformants(){
+    var table = new Tabulator('#informantsTable',{
+        height:'100%',
+        selectableRows:true,
+        rowHeader: {
+            headerSort: false,
+            resizable: false,
+            frozen: true,
+            headerHozAlign: "center",
+            hozAlign: "center",
+            formatter: "rowSelection",
+            titleFormatter: "rowSelection",
+            cellClick: function (e, cell) {
+                cell.getRow().toggleSelect();
+            }
+        },
+        placeholder: 'Введите фразу в поиске',
+        ajaxContentType: "json",
+        layout: "fitColumns",
+        autoColumns: true,
+        autoColumnsDefinitions: FORMAT_INFORMANTS_COLUMNS,
+    });
+
+    table.on('tableBuilt', function(e){
+            table.setData("api/sql/dataOnly", {
+            'query': QUERY_SELECT_FROM,
+            'inserts': ''
+        }, "POST");
+    });
+    table.on("dataProcessed", function(data){
+        if(data.length>0) console.log(table.getColumn('hide').setHeaderFilterValue(false));
+    });
+    USER = (await getUsername()).data;
+//    console.log(USER)
+
+
+    /// Обработка событий
+    document.getElementById('buttonAddInformant').addEventListener('click',function(){
+        addInformant(table, USER)
+    })
+    document.getElementById('inputSearchInformant').addEventListener('keydown', function(e){
+        if(e.code == 'Enter'){
+            e.target.blur();
+            searchInformants(table, e.target.value);
+        }
+    })
+    document.getElementById('buttonSearchInformant').addEventListener('click', function(){
+        searchInformants(table, document.getElementById('inputSearchInformant').value)
+    })
+}
+runInformants();
+
+/**
+ * @brief Определение какой пользователь авторизовался
+ * @return JSON с именем пользователя в формате {username: <имя> }
+ */
 async function getUsername(){
     let user = ''
     let res = await fetch('/api/session/username',{
@@ -223,31 +329,12 @@ async function getUsername(){
     }
 }
 
-    var table = new Tabulator('#informantsTable',{
-        height:'100%',
-        placeholder: 'Введите фразу в поиске',
-        ajaxContentType: "json",
-        layout: "fitColumns",
-        autoColumns: true,
-        autoColumnsDefinitions: FORMAT_INFORMANTS_COLUMNS
-    });
-async function runInformants(){
-
-    table.on('tableBuilt', function(e){
-        table.setData("api/sql/dataOnly", {
-        'query': QUERY_INFORMANTS,
-        'inserts': ''
-    }, "POST");
-    });
-    USER = (await getUsername()).data
-    console.log(USER)
-
-    document.getElementById('buttonAddInformant').addEventListener('click',function(){
-        addInformant(table, USER)
-    })
-}
-runInformants()
-
+/**
+ * @brief Добавление нового информанта в таблицу
+ * @param [in] Tabulator tab - таблица с данными информантов
+ * @param [in] String    user - логин пользователя
+ * @return Description of returned value.
+ */
 async function addInformant(tab, user){
     let res = await sql( `INSERT INTO informants (user_created) VALUES ('${user}')`)
     if(res.errors){
@@ -262,3 +349,33 @@ async function addInformant(tab, user){
     tab.deselectRow();
     tab.selectRow(res.data.insertId);
 }
+
+/**
+ * @brief Поиск информантов
+ * @param [in] Tabulator tab - таблица с данными информантов
+ */
+function searchInformants(tab, val){
+    console.log(val)
+    let where = ''
+    if(!(val === undefined || val === '')){
+        where = ' WHERE '
+        const FIELDS = ['last_name','last_name_at_birth','nickname', 'first_name', 'middle_name','comments', 'comments',  'contacts', 'keywords', 'reporter', 'user_created'];
+
+        const WORDS = val.split(/ +|,+|;+/)
+
+        for(let i in WORDS){
+            if(WORDS[i]=='') continue;
+            for (j in FIELDS){
+                where += ` (${FIELDS[j]} LIKE '%${WORDS[i]}%') OR`
+            }
+        }
+        where = where.substring(0, where.length-2)
+        console.log(where)
+    }
+    tab.setData("api/sql/dataOnly", {
+        'query': QUERY_SELECT_FROM + where,
+        'inserts': ''
+    }, "POST");
+}
+
+

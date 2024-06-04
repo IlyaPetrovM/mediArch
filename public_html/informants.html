@@ -27,18 +27,14 @@ TODO аутентификация!!!
                 <div class="container-fluid">
                     <a class="navbar-brand">Архив экспедиции - Файлы</a>
                     <nav>
-                        <a href='/index.html'>Главная</a>
                         <a href='/files.html'>Файлы</a>
                         <a href='/load.html'>Загрузка</a>
-                        <a href='/marks.html'>Описи</a>
                         <a href='/informants.html'>Информанты</a>
-                        <a href='/users.html'>Пользователи</a>
-                        <a href='/interfaces.html'>Интерфейсы</a>
                      </nav>
                     <button class="btn btn-primary" id='buttonAddInformant'>Добавить информанта</button>
                     <div class="d-flex">
-                        <input id=srch class="form-control me-2" type="search" placeholder="Введите фразу" value=''>
-                        <button class="btn btn-outline-success" onclick="searchInformants()">Поиск</button>
+                        <input id='inputSearchInformant' class="form-control me-2" type="search" placeholder="Введите фразу" value='' >
+                        <button class="btn btn-outline-success" id='buttonSearchInformant'>Поиск</button>
                     </div>
                 </div>
             </nav>
