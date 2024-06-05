@@ -39,7 +39,13 @@ async function load() {
         console.log( 'длина EXIF', exif_str.length, exif)
         
         let dateCreated = exif.DateTime
-        if (dateCreated === undefined) dateCreated = exif.DateTimeOriginal
+        if (dateCreated === undefined) dateCreated = exif.DateTimeOriginal;
+        const avmeta = await getAVmetadata(files[i]);
+
+        if (exif_str.length == 2) exif_str = JSON.stringify(avmeta)
+        if (dateCreated === undefined) dateCreated = luxon.DateTime.fromJSDate(new Date(avmeta.media.track[0].Tagged_Date)).toFormat('yyyy-MM-dd hh:mm:ss');
+        if (dateCreated === undefined) dateCreated = luxon.DateTime.fromJSDate(new Date(avmeta.media.track[0].Encoded_Date)).toFormat('yyyy-MM-dd hh:mm:ss');
+
         if (dateCreated === undefined) dateCreated = luxon.DateTime.fromJSDate(files[i].lastModifiedDate).toFormat('yyyy-MM-dd hh:mm:ss');
 
 
@@ -223,8 +229,7 @@ function transliterate(word){
     Используется библиотека mediainfo.js
     НЕОБХОДИМО, чтобы на один уровень выше был расположен файл MediaInfoModule.wasm
 */
-const onChangeFile = async () => {
-  const file = filesInput.files[0]
+async function getAVmetadata(file) {
   console.log(file)
   if (file) {
       console.log('Working…')
@@ -234,15 +239,16 @@ const onChangeFile = async () => {
     const readChunk = async (chunkSize, offset) =>
       new Uint8Array(await file.slice(offset, offset + chunkSize).arrayBuffer())
 
-    mediainfo
-      .analyzeData(file.size, readChunk)
-      .then((result) => {
-        console.log(result)
-      })
-      .catch((error) => {
-        console.error(`An error occured:\n${error.stack}`)
-      })
+    const result = await mediainfo.analyzeData(file.size, readChunk)
+//      .then((result) => {
+    console.log(result)
+    return result;
+//      })
+//      .catch((error) => {
+//        console.error(`An error occured:\n${error.stack}`)
+//        return null;
+//      })
   }
 }
 
-filesInput.addEventListener('change', () => onChangeFile())
+filesInput.addEventListener('change', () => getAVmetadata(filesInput.files[0]))
