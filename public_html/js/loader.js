@@ -40,6 +40,8 @@ async function load() {
         
         let dateCreated = exif.DateTime
         if (dateCreated === undefined) dateCreated = exif.DateTimeOriginal
+        if (dateCreated === undefined) dateCreated = luxon.DateTime.fromJSDate(files[i].lastModifiedDate).toFormat('yyyy-MM-dd hh:mm:ss');
+
 
         let gps = getGPSCoords(exif)
         console.log(gps)
@@ -223,6 +225,7 @@ function transliterate(word){
 */
 const onChangeFile = async () => {
   const file = filesInput.files[0]
+  console.log(file)
   if (file) {
       console.log('Working…')
       console.log(window.MediaInfo);
