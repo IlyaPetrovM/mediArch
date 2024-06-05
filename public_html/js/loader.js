@@ -214,3 +214,32 @@ function transliterate(word){
     return alphabet[char] || char; 
   }).join("");
 }
+
+
+/*
+    Показывает в консоли метаданные 1-го видеофайла который был прикреплён
+    Используется библиотека mediainfo.js
+    НЕОБХОДИМО, чтобы на один уровень выше был расположен файл MediaInfoModule.wasm
+*/
+const onChangeFile = async () => {
+  const file = filesInput.files[0]
+  if (file) {
+      console.log('Working…')
+      console.log(window.MediaInfo);
+      const  mediainfo = await window.MediaInfo.mediaInfoFactory();
+
+    const readChunk = async (chunkSize, offset) =>
+      new Uint8Array(await file.slice(offset, offset + chunkSize).arrayBuffer())
+
+    mediainfo
+      .analyzeData(file.size, readChunk)
+      .then((result) => {
+        console.log(result)
+      })
+      .catch((error) => {
+        console.error(`An error occured:\n${error.stack}`)
+      })
+  }
+}
+
+filesInput.addEventListener('change', () => onChangeFile())
