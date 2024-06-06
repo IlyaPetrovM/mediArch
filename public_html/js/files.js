@@ -8,8 +8,12 @@ const STANDARD_QUERY = `SELECT id,
                         '>>>' as play,
                         'Просмотр' as view,
                         description, 
-                        recognizedText,
-                        recognitionStatus,
+                        date_created_GMT,
+                        date_created_timezone,
+                        date_upload,
+                        date_upload_timezone,
+                        date_updated,
+                        date_updated_timezone,
                         oldName, 
                         name, 
                         fileType,
@@ -31,18 +35,23 @@ const ICON_TEXT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16
  * Форматирование колонок таблицы
  */
 const FORMAT_FILES_COLUMNS = [
+    //id
     {
         field: 'id', 
-        width:40  
+        width:40 ,
+        hozAlign:  "center",
     },
+    //description
     {
         field: 'description', 
         editor: 'list',
+        width:250 ,
         editorParams:{autocomplete:"true", allowEmpty:true,listOnEmpty:true, valuesLookup:true, freetext:true},
         cellEdited: async function (cell){ 
             let res = await sql( `UPDATE files SET description='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
         },
     },
+    //recognizedText
     {
         field: 'recognizedText', 
         editor: 'textarea',
@@ -100,12 +109,21 @@ const FORMAT_FILES_COLUMNS = [
     },
     //fileType
     {
-    field: 'fileType', 
-    editor: 'list',
-    editorParams:{autocomplete:"true", allowEmpty:true,listOnEmpty:true, valuesLookup:true, freetext:false, values:['image',"video", "audio", "text", "other"]},
-    cellEdited: async function (cell){ 
-        let res = await sql( `UPDATE files SET fileType='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
-    },
+        title: "Тип",
+        field: 'fileType',
+        editor: 'list',
+        hozAlign: "center",
+        editorParams: {
+            autocomplete: "true",
+            allowEmpty: true,
+            listOnEmpty: true,
+            valuesLookup: true,
+            freetext: false,
+            values: ['image', "video", "audio", "text", "other"]
+        },
+        cellEdited: async function (cell) {
+            let res = await sql(`UPDATE files SET fileType='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
+        },
     },
     //play
     { 
@@ -127,14 +145,15 @@ const FORMAT_FILES_COLUMNS = [
         width:     20, 
         hozAlign:  "center"
     },
-    
+    //view
     {
         title: 'Просмотр',
         field: 'view',
-        width:     128, 
+        width:     80,
         hozAlign:  "center",
         formatter: function(cell) {return `<img alt=':(' src='${UPLOAD_PATH + cell.getRow().getData().name}' class='previewImage'>`; }
     },
+    //download
     {
         title: "Скачать",
         field: 'download',
@@ -143,19 +162,81 @@ const FORMAT_FILES_COLUMNS = [
         hozAlign:  "center",  
         cellClick: function(e, cell){ downloadFile(e, UPLOAD_PATH + cell.getRow().getData().name);} 
     },
+    //date_created_GMT
+    {
+        title: "Дата съёмки",
+        field: 'date_created_GMT',
+        width:     100,
+        formatter: (e) => {
+            if(e.getValue() != undefined)
+                return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MMM hh:mm')
+            else return '';
+        }
+    },
+    //date_upload
+     {
+        title: "Часовой пояс даты съёмки",
+        field: 'date_created_timezone',
+        width:     60,
+    },
+    //date_upload
+    {
+        title: "Дата загрузки",
+        field: 'date_upload',
+        width:     100,
+        formatter: (e) => {
+            if(e.getValue() != undefined)
+                return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MMM hh:mm')
+            else return '';
+        }
+    },
+    //date_upload_timezone
+    {
+        title: "Часовой пояс даты загрузки",
+        field: 'date_upload_timezone',
+        width:     60,
+    },
+    //date_updated
+    {
+        title: "Дата обновления",
+        field: 'date_updated',
+        width:     100,
+        formatter: (e) => {
+            if(e.getValue() != undefined)
+                return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MMM hh:mm')
+            else return '';
+        }
+    },
+    //date_updated_timezone
+     {
+        title: "Часовой пояс даты обновления",
+        field: 'date_updated_timezone',
+        width:     60,
+    },
+    //fileExt
+    {
+        title: "Расширение",
+        field: 'fileExt',
+        width:     60,
+        hozAlign:  "center",
+    },
 ];
 
-
 /**
-*  downloadFile - Открывает ссылку на определённый файл в новой вкладке
-*  eventOnClick - событие при нажатии кнопки загрузки файла
-*  path - полный путь к файлу, который нужно загружать
-*/
-function downloadFile(eventOnClick, path){
-   window.open(path,"_blank");
-   eventOnClick.stopPropagation();
-}   
+ * MAIN CODE -  начало основного кода
+ */
 
+var table = new Tabulator("#fileTable", {
+    height:"100%",
+    layout: "fitColumns",
+    placeholder: "Введите поисковую фразу",
+    ajaxContentType: "json",
+    autoColumns: true,
+    autoColumnsDefinitions: FORMAT_FILES_COLUMNS
+});
+table.on('tableBuilt', function(e){
+    loadDataToTable(STANDARD_QUERY)
+});
 
 /**
 * Поведение строки поиска
@@ -168,6 +249,20 @@ srch.addEventListener('keydown', function(e){
     
 });
 
+/**
+*  downloadFile - Открывает ссылку на определённый файл в новой вкладке
+*  eventOnClick - событие при нажатии кнопки загрузки файла
+*  path - полный путь к файлу, который нужно загружать
+*/
+function downloadFile(eventOnClick, path){
+   window.open(path,"_blank");
+   eventOnClick.stopPropagation();
+}
+
+
+/**
+    Поиск по таблице
+*/
 function startSearch() {
     let where = ''
     if (!(srch.value === undefined || srch.value === '')){
@@ -175,24 +270,6 @@ function startSearch() {
     }
     loadDataToTable(STANDARD_QUERY + where);
 }
-/**
- * MAIN CODE -  начало основного кода
- */
-
-var table = new Tabulator("#fileTable", {
-    height:"100%",
-    layout: "fitColumns",
-    placeholder: "Введите поисковую фразу",
-    ajaxContentType: "json",
-    layout: "fitColumns",
-    autoColumns: true,
-    autoColumnsDefinitions: FORMAT_FILES_COLUMNS
-    
-});
-table.on('tableBuilt', function(e){ 
-    loadDataToTable(STANDARD_QUERY)
-});
-
 
 /**
  * @brief Запрос к БД. 
@@ -206,11 +283,12 @@ function loadDataToTable(q) {
 }
 
 /**
-*
+* Определение пути к файлам
 */
 function getFilePath(filename, useProxy=true){
    return UPLOAD_PATH + filename;
 }
+
 /**
 * Определяет расширение файла
 */

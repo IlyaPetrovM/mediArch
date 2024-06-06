@@ -1,5 +1,15 @@
 uploadButton.addEventListener('click', load)
 
+//Перехватываем событие отправки формы, чтобы нас не перенаправляло на другие страницы
+loaderForm.addEventListener('submit', (e) => {
+    e.preventDefault(); // запрещаем распространение события после исполнения нашей функции
+    return false;
+})
+
+
+
+
+
 /** 
    Общее
     Печать в текстовом поле
@@ -9,13 +19,6 @@ function print(t) {
 }
 
 
-/** 
-    Перехватываем событие отправки формы, чтобы нас не перенаправляло на другие страницы
-*/
-loaderForm.addEventListener('submit', (e) => {
-    e.preventDefault(); // запрещаем распространение события после исполнения нашей функции
-    return false;
-})
 
 
 /** 
@@ -33,32 +36,25 @@ async function load() {
         print(`... загружен на сервер ...`)
         let fext = getUrlExtention(files[i].name)
         let ftype = getFileType(fext)
-        print(`... читаем EXIF информацию файла ...`)
-        let exif = await getExif(files[i])
-        let exif_str = JSON.stringify(exif)
-        console.log( 'длина EXIF', exif_str.length, exif)
-        
-        let dateCreated = exif.DateTime
-        if (dateCreated === undefined) dateCreated = exif.DateTimeOriginal;
+        print(`... читаем мета-информацию файла ...`)
+
+        let exif = await getExif(files[i]);
+        let exif_str = JSON.stringify(exif);
+
         const avmeta = await getAVmetadata(files[i]);
-
         if (exif_str.length == 2) exif_str = JSON.stringify(avmeta)
-        if (dateCreated === undefined) dateCreated = luxon.DateTime.fromJSDate(new Date(avmeta.media.track[0].Tagged_Date)).toFormat('yyyy-MM-dd hh:mm:ss');
-        if (dateCreated === undefined) dateCreated = luxon.DateTime.fromJSDate(new Date(avmeta.media.track[0].Encoded_Date)).toFormat('yyyy-MM-dd hh:mm:ss');
-
-        if (dateCreated === undefined) dateCreated = luxon.DateTime.fromJSDate(files[i].lastModifiedDate).toFormat('yyyy-MM-dd hh:mm:ss');
 
 
+        let dateCreatedUTC = getDateCreation(file[i], exif, avmeta);
         let gps = getGPSCoords(exif)
-        console.log(gps)
 
         print(`... заносим информацию в БД ...`)
         const sql_res = await sql('INSERT INTO ?? (??) VALUES ( ? ) ',
-            ['files', ['oldName', 'name', 'fileExt', 'filetype', 'date_created','gps_str', 'exif'],
-                [files[i].name, transliterate(files[i].name), fext, ftype, dateCreated, gps, exif_str]]);
+            ['files', ['oldName', 'name', 'fileExt', 'filetype', 'date_created_GMT','gps_str', 'exif'],
+                [files[i].name, transliterate(files[i].name), fext, ftype, dateCreatedUTC, gps, exif_str]]);
 
-        if (load_res.errors) console.log('Ошибка загрузки файла')
-        if (sql_res.errors) console.log('Ошибка выполнения SQL-запроса')
+        if (load_res.errors) print('!!! Ошибка загрузки файла')
+        if (sql_res.errors) print('!!! Ошибка выполнения SQL-запроса')
 
         print(`id ${sql_res.data.insertId}. ${load_res.data}\tOK`);
     }
@@ -67,6 +63,83 @@ async function load() {
 }
 
 
+/**
+ * @brief Определяет дату создания файла по различным признакам
+ * @param [in] File file - файл, дату которого нужно определить
+ * @param [in] JSON exif данные EXIF - для фотографии
+ * @param [in] JSON avmeta метаданные, получаемые в основном для аудио и видео
+ * @return Возвращает дату в формате JSDate UTC
+ */
+function getDateCreation( file, exif, avmeta) {
+    console.log(
+        [exif.GPSDateStamp,                     // строка "2024:02:21"       // UTC
+         exif.GPSTimeStamp],                    // массив [h, m, s]          // UTC
+        avmeta.media.track[0].Tagged_Date,      // "2024-02-20 15:34:05 UTC" // UTC
+        avmeta.media.track[0].Encoded_Date,     // "2024-02-20 15:34:05 UTC" // UTC
+        exif.DateTime,                          // 2024:02:21 09:37:57       // local - фотоаппарата (но неизвестно как он был настроен)
+        exif.DateTimeOriginal,                  // 2024:02:21 09:37:57       // local - фотоаппарата (но неизвестно как он был настроен)
+        file.lastModified                       // JS Date                   // local - ОПАСНО! возвращает объект Date во временной зоне компьютера, с которого ведётся загрузка, но исходное время могло быть с другим часовым поясом!
+    )
+    let dateCreatedLocal = exif.DateTime;
+    let dateCreatedUTC = exif.DateTime;
+    let dateCreatedTZ = exif.DateTimeOriginal;
+
+    if (dateCreatedUTC === undefined) {
+        dateCreatedUTC = exif.DateTimeOriginal;
+        if(exif.OffsetTimeOriginal){
+            dateCreatedTZ = exif.OffsetTimeOriginal;
+        }
+//        else if(exif.GPSTimeStamp){
+//            //GPS время представлено в формате UTC
+//            //                      new Date (year, month, date, hours, minutes, seconds, ms)
+//            const dateParts = exif.GPSDateStamp.split(':')
+////            dateCreatedUTC = luxon.DateTime.utc(dateParts[]); TODO
+//            dateCreatedTZ = exif.GPSTimeStamp[0]+':'+ exif.GPSTimeStamp[1]
+//        }
+    }
+
+    if (dateCreatedUTC === undefined) {
+        //время представлено в формате UTC
+        dateCreatedUTC = luxon.DateTime.fromJSDate(new Date(avmeta.media.track[0].Tagged_Date)).toFormat('yyyy-MM-dd hh:mm:ss');
+        dateCreatedTZ = '+00:00';
+    }
+    if (dateCreatedUTC === undefined) {
+        //время представлено в формате UTC
+        dateCreatedUTC = luxon.DateTime.fromJSDate(new Date(avmeta.media.track[0].Encoded_Date)).toFormat('yyyy-MM-dd hh:mm:ss');
+        dateCreatedTZ = '+00:00';
+    }
+
+    if (dateCreatedUTC === undefined) {
+        let time = file.lastModifiedDate;
+        let zone = file.lastModifiedDate
+        dateCreatedUTC = luxon.DateTime.fromJSDate().toFormat('yyyy-MM-dd hh:mm:ss');
+        dateCreatedTZ = getTimezoneFromJSDate(file.lastModifiedDate);
+    }
+
+    console.log('exif TZ',exif.OffsetTimeOriginal)
+    if(exif.GPSTimeStamp) console.log('exif GPS time',exif.GPSTimeStamp[0]+':'+ exif.GPSTimeStamp[1]);
+    console.log('meta Tagged_Date',avmeta.media.track[0].Tagged_Date)
+    console.log('file lastModifiedDate',getTimezoneFromJSDate(files[i].lastModifiedDate))
+    return dateCreatedUTC;
+}
+
+/**
+ * @brief Формирует временной сдвиг для временной зоны в формате +03:00
+ * @param [in|out] Date date дата
+ * @return Строка - временной сдвиг для временной зоны в формате "+03:00"
+ */
+function getTimezoneFromJSDate(date){
+    const ofst = String(date).split('GMT')[1].substring(0,5);
+    return ofst.substring(0,3)+':'+ofst.substring(3,5);
+}
+
+
+
+/**
+ * @brief Извлекает из EXIF данных GPS-координаты и преобразует их в пару чисел
+ * @param [in] JSON exif
+ * @return Широта и долгота в градусах (без минут и секунд) Соответствие сторонам света см. ниже
+ */
 function getGPSCoords(exif){
     // http://the-mostly.ru/konverter_geograficheskikh_koordinat.html
     /*
@@ -82,15 +155,24 @@ function getGPSCoords(exif){
         GPSLongitude
         GPSLongitudeRef
     */
-    if(exif.GPSLatitude === undefined) return undefined;
-    let gps = {lat:undefined, lng:undefined};
-    gps.lat = exif.GPSLatitude[0] + exif.GPSLatitude[1]/60 + exif.GPSLatitude[2]/(60*60)
-    gps.lng = exif.GPSLongitude[0] + exif.GPSLongitude[1]/60 + exif.GPSLongitude[2]/(60*60)
+    if (exif.GPSLatitude === undefined) return undefined;
+    let gps = {
+        lat: undefined,
+        lng: undefined
+    };
+    gps.lat = exif.GPSLatitude[0] + exif.GPSLatitude[1] / 60 + exif.GPSLatitude[2] / (60 * 60)
+    gps.lng = exif.GPSLongitude[0] + exif.GPSLongitude[1] / 60 + exif.GPSLongitude[2] / (60 * 60)
     if (exif.GPSLatitudeRef == 'S') gps.lat = -gps.lat
     if (exif.GPSLongitudeRef == 'W') gps.lng = -gps.lng
-    return gps.lat+', '+gps.lng;
+    return gps.lat + ', ' + gps.lng;
 }
 
+
+/**
+ * @brief Получает EXIF-данные из фотографии
+ * @param [in] File file - фотография или просто файл
+ * @return JSON с информацией EXIF
+ */
 async function getExif(file) {
     EXIF.enableXmp();
     return new Promise(resolve => {
@@ -215,9 +297,13 @@ function loadFileXhr(file, onprogress){
     });
 }   
 
-const alphabet = {"Ё":"YO","Й":"I","Ц":"TS","У":"U","К":"K","Е":"E","Н":"N","Г":"G","Ш":"SH","Щ":"SCH","З":"Z","Х":"H","Ъ":"'","ё":"yo","й":"i","ц":"ts","у":"u","к":"k","е":"e","н":"n","г":"g","ш":"sh","щ":"sch","з":"z","х":"h","ъ":"","Ф":"F","Ы":"I","В":"V","А":"A","П":"P","Р":"R","О":"O","Л":"L","Д":"D","Ж":"ZH","Э":"E","ф":"f","ы":"i","в":"v","а":"a","п":"p","р":"r","о":"o","л":"l","д":"d","ж":"zh","э":"e","Я":"Ya","Ч":"CH","С":"S","М":"M","И":"I","Т":"T","Ь":"'","Б":"B","Ю":"YU","я":"ya","ч":"ch","с":"s","м":"m","и":"i","т":"t","ь":"","б":"b","ю":"yu", ' ':'_'};
-
+/**
+ * @brief Превращает кириллицу в латиницу
+ * @param [in|out] String word слово содержащее символы кириллицы или латиницы
+ * @return Строка без кириллицы, но с латиницей
+ */
 function transliterate(word){
+    const alphabet = {"Ё":"YO","Й":"I","Ц":"TS","У":"U","К":"K","Е":"E","Н":"N","Г":"G","Ш":"SH","Щ":"SCH","З":"Z","Х":"H","Ъ":"'","ё":"yo","й":"i","ц":"ts","у":"u","к":"k","е":"e","н":"n","г":"g","ш":"sh","щ":"sch","з":"z","х":"h","ъ":"","Ф":"F","Ы":"I","В":"V","А":"A","П":"P","Р":"R","О":"O","Л":"L","Д":"D","Ж":"ZH","Э":"E","ф":"f","ы":"i","в":"v","а":"a","п":"p","р":"r","о":"o","л":"l","д":"d","ж":"zh","э":"e","Я":"Ya","Ч":"CH","С":"S","М":"M","И":"I","Т":"T","Ь":"'","Б":"B","Ю":"YU","я":"ya","ч":"ch","с":"s","м":"m","и":"i","т":"t","ь":"","б":"b","ю":"yu", ' ':'_'};
   return word.split('').map(function (char) { 
     return alphabet[char] || char; 
   }).join("");
@@ -230,25 +316,14 @@ function transliterate(word){
     НЕОБХОДИМО, чтобы на один уровень выше был расположен файл MediaInfoModule.wasm
 */
 async function getAVmetadata(file) {
-  console.log(file)
-  if (file) {
-      console.log('Working…')
-      console.log(window.MediaInfo);
-      const  mediainfo = await window.MediaInfo.mediaInfoFactory();
-
-    const readChunk = async (chunkSize, offset) =>
-      new Uint8Array(await file.slice(offset, offset + chunkSize).arrayBuffer())
-
-    const result = await mediainfo.analyzeData(file.size, readChunk)
-//      .then((result) => {
-    console.log(result)
-    return result;
-//      })
-//      .catch((error) => {
-//        console.error(`An error occured:\n${error.stack}`)
-//        return null;
-//      })
-  }
+    if (file) {
+        const mediainfo = await window.MediaInfo.mediaInfoFactory();
+        const readChunk = async (chunkSize, offset) =>
+            new Uint8Array(await file.slice(offset, offset + chunkSize).arrayBuffer())
+        const result = await mediainfo.analyzeData(file.size, readChunk);
+        return result;
+    }
+    return undefined;
 }
-
-filesInput.addEventListener('change', () => getAVmetadata(filesInput.files[0]))
+//
+//filesInput.addEventListener('change', () => getAVmetadata(filesInput.files[0]))
