@@ -2,6 +2,12 @@ inputUsername.onfocus = ()=>{
     msg.innerHTML = ''
 }
 
+document.getElementById('inputPassword').addEventListener('keydown', e => {if(e.code == 'Enter') login();})
+document.getElementById('inputUsername').addEventListener('keydown', e => {
+    if(e.code == 'Enter') document.getElementById('inputPassword').focus();
+})
+
+
 async function login(){
 
  let response = await fetch('/api/login', {
