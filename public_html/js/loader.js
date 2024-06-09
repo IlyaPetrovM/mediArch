@@ -45,13 +45,25 @@ async function load() {
         if (exif_str.length == 2) exif_str = JSON.stringify(avmeta)
 
 
-        let dateCreatedUTC = getDateCreation(file[i], exif, avmeta);
+        let  {dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL} = getDateCreation(files[i], exif, avmeta);
+        console.log({dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL});
         let gps = getGPSCoords(exif)
+
+        let deviceModel = (exif.Make) ? (exif.Make + '_' + exif.Model) : null;
 
         print(`... заносим информацию в БД ...`)
         const sql_res = await sql('INSERT INTO ?? (??) VALUES ( ? ) ',
-            ['files', ['oldName', 'name', 'fileExt', 'filetype', 'date_created_GMT','gps_str', 'exif'],
-                [files[i].name, transliterate(files[i].name), fext, ftype, dateCreatedUTC, gps, exif_str]]);
+            ['files', ['oldName', 'name', 'fileExt', 'filetype', 'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str', 'exif'],
+                [files[i].name,
+                 transliterate(files[i].name),
+                 fext,
+                 ftype,
+                 dateCreatedUTC,
+                 dateCreatedLOCAL,
+                 dateUpdatedLOCAL,  // Может врать! В видео записыватся UTC, а в телефоне, например локальное время!
+                 deviceModel,
+                 gps,
+                 exif_str]]);
 
         if (load_res.errors) print('!!! Ошибка загрузки файла')
         if (sql_res.errors) print('!!! Ошибка выполнения SQL-запроса')
@@ -68,59 +80,52 @@ async function load() {
  * @param [in] File file - файл, дату которого нужно определить
  * @param [in] JSON exif данные EXIF - для фотографии
  * @param [in] JSON avmeta метаданные, получаемые в основном для аудио и видео
- * @return Возвращает дату в формате JSDate UTC
+ * @return Возвращает дату в формате 2024-02-20 15:34:05 UTC
  */
 function getDateCreation( file, exif, avmeta) {
-    console.log(
-        [exif.GPSDateStamp,                     // строка "2024:02:21"       // UTC
-         exif.GPSTimeStamp],                    // массив [h, m, s]          // UTC
-        avmeta.media.track[0].Tagged_Date,      // "2024-02-20 15:34:05 UTC" // UTC
-        avmeta.media.track[0].Encoded_Date,     // "2024-02-20 15:34:05 UTC" // UTC
-        exif.DateTime,                          // 2024:02:21 09:37:57       // local - фотоаппарата (но неизвестно как он был настроен)
-        exif.DateTimeOriginal,                  // 2024:02:21 09:37:57       // local - фотоаппарата (но неизвестно как он был настроен)
-        file.lastModified                       // JS Date                   // local - ОПАСНО! возвращает объект Date во временной зоне компьютера, с которого ведётся загрузка, но исходное время могло быть с другим часовым поясом!
-    )
-    let dateCreatedLocal = exif.DateTime;
-    let dateCreatedUTC = exif.DateTime;
-    let dateCreatedTZ = exif.DateTimeOriginal;
+     console.log([[exif.GPSDateStamp, exif.GPSTimeStamp ],
+        avmeta.media.track[0].Tagged_Date,
+        avmeta.media.track[0].Encoded_Date,
+        exif.DateTime,
+        exif.DateTimeOriginal,
+        file.lastModified        ]);
 
-    if (dateCreatedUTC === undefined) {
-        dateCreatedUTC = exif.DateTimeOriginal;
-        if(exif.OffsetTimeOriginal){
-            dateCreatedTZ = exif.OffsetTimeOriginal;
-        }
-//        else if(exif.GPSTimeStamp){
-//            //GPS время представлено в формате UTC
-//            //                      new Date (year, month, date, hours, minutes, seconds, ms)
-//            const dateParts = exif.GPSDateStamp.split(':')
-////            dateCreatedUTC = luxon.DateTime.utc(dateParts[]); TODO
-//            dateCreatedTZ = exif.GPSTimeStamp[0]+':'+ exif.GPSTimeStamp[1]
-//        }
+    let dateCreatedUTC = getGPSdate(exif) ||     // GPS-дата задаётся в часовом поясе  UTC
+        avmeta.media.track[0].Tagged_Date ||     // "2024-02-20 15:34:05 UTC" // UTC
+        avmeta.media.track[0].Encoded_Date;     // "2024-02-20 15:34:05 UTC" // UTC
+
+    let dateCreatedLOCAL = exif.DateTime ||     // 2024:02:21 09:37:57       // local - фотоаппарата (но неизвестно как он был настроен)
+        exif.DateTimeOriginal;                // 2024:02:21 09:37:57       // local - фотоаппарата (но неизвестно как он был настроен)
+    if (dateCreatedUTC){
+        dateCreatedUTC = dateCreatedUTC.substr(0,dateCreatedUTC.length-3);
     }
 
-    if (dateCreatedUTC === undefined) {
-        //время представлено в формате UTC
-        dateCreatedUTC = luxon.DateTime.fromJSDate(new Date(avmeta.media.track[0].Tagged_Date)).toFormat('yyyy-MM-dd hh:mm:ss');
-        dateCreatedTZ = '+00:00';
+    let dateUpdatedLOCAL;
+    if (file.lastModified){
+        dateUpdatedLOCAL = luxon.DateTime.fromMillis(file.lastModified).toFormat('yyyy-MM-dd hh:mm:ss');
+        console.log(dateUpdatedLOCAL);
     }
-    if (dateCreatedUTC === undefined) {
-        //время представлено в формате UTC
-        dateCreatedUTC = luxon.DateTime.fromJSDate(new Date(avmeta.media.track[0].Encoded_Date)).toFormat('yyyy-MM-dd hh:mm:ss');
-        dateCreatedTZ = '+00:00';
-    }
+    return {dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL };
+}
+function getGPSdate(exif){
+    if (exif.GPSDateStamp == undefined) {return undefined;}
+    const dp = exif.GPSDateStamp.split(':');
+    console.log([dp,Number.parseInt(dp[0]), // year
+                                 Number.parseInt(dp[1]), // month
+                                 Number.parseInt(dp[2]), // day
+                                 Number.parseInt(exif.GPSTimeStamp[0]),   // hour
+                                 Number.parseInt(exif.GPSTimeStamp[1]),    // minute
+                                 Number.parseInt(exif.GPSTimeStamp[2])]);
 
-    if (dateCreatedUTC === undefined) {
-        let time = file.lastModifiedDate;
-        let zone = file.lastModifiedDate
-        dateCreatedUTC = luxon.DateTime.fromJSDate().toFormat('yyyy-MM-dd hh:mm:ss');
-        dateCreatedTZ = getTimezoneFromJSDate(file.lastModifiedDate);
-    }
-
-    console.log('exif TZ',exif.OffsetTimeOriginal)
-    if(exif.GPSTimeStamp) console.log('exif GPS time',exif.GPSTimeStamp[0]+':'+ exif.GPSTimeStamp[1]);
-    console.log('meta Tagged_Date',avmeta.media.track[0].Tagged_Date)
-    console.log('file lastModifiedDate',getTimezoneFromJSDate(files[i].lastModifiedDate))
-    return dateCreatedUTC;
+    let gps = luxon.DateTime.utc(Number.parseInt(dp[0]), // year
+                                 Number.parseInt(dp[1]), // month
+                                 Number.parseInt(dp[2]), // day
+                                 Number.parseInt(exif.GPSTimeStamp[0]),   // hour
+                                 Number.parseInt(exif.GPSTimeStamp[1]),    // minute
+                                 Number.parseInt(exif.GPSTimeStamp[2]) ).toFormat('yyyy-MM-dd hh:mm:ss')   // second                     // milliseconds
+    console.log(gps);
+    if(gps == 'Invalid DateTime') return undefined;
+    return gps+ ' UTC';
 }
 
 /**
