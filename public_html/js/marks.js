@@ -11,6 +11,8 @@ const QUERY_MARKS = `SELECT  id,
                             time_msec,
                             tags, 
                             describtion,
+recognition0,
+recognition1,
                             hide
                         FROM marks
                         WHERE 
@@ -30,6 +32,7 @@ const FORMAT_MARKS_COLUMNS = [
         width:150,
         visible: false
     },
+
     {
         title:'Время',
         field: 'time_msec',
@@ -49,6 +52,11 @@ const FORMAT_MARKS_COLUMNS = [
                 `UPDATE marks SET describtion = '${cell.getValue()}' WHERE id = ${cell.getRow().getData().id}`)
             if (edit_result.errors) {alert('Ошибка при сохранении описания метки в БД')}
         }
+    },
+        {
+        field: 'recognition0',
+        editor: 'textarea',
+        formatter:'textarea'
     },
     {
         title:'',

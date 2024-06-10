@@ -40,7 +40,7 @@ function recognizeAudio(inputPath, tempDir, recId, segmentSize_sec = 60, callbac
             console.error(`stderr: ${stderr}`);
         }
         console.log(`Аудиофайл успешно разделен на фрагменты по ${segmentSize_sec}  секунд.`);
-        recogAudioFragmInDir(outputDir, recId).then(callback);
+        recogAudioFragmInDir(outputDir, recId, segmentSize_sec).then(callback);
         console.log('ГОТОВО')
     });
 }
@@ -50,7 +50,7 @@ function recognizeAudio(inputPath, tempDir, recId, segmentSize_sec = 60, callbac
  * @param [in] directoryPath - папка, где лежат файлы для распознавания
  * @return JSON с названиями файлов и распознаным текстом
  */
-async function recogAudioFragmInDir(directoryPath, recId) {
+async function recogAudioFragmInDir(directoryPath, recId, segmentSize_sec) {
     return new Promise((resolve)=>{ 
         var res = {}
         fs.readdir(directoryPath, async function (err, files) {
@@ -59,6 +59,7 @@ async function recogAudioFragmInDir(directoryPath, recId) {
             return;
         }
         console.log('Файлы в указанной папке:');
+        let timecode = 0
         const conn = mysql.createConnection(config.DB)
         for (let i in files){
             console.log('Обрабатываю файл', files[i])
@@ -70,8 +71,10 @@ async function recogAudioFragmInDir(directoryPath, recId) {
             
             const text = r.filename + ':'+ r.result.recognitionResults.variant[0]._ + ' \n'
             try{
-                let res = await conn.query(`UPDATE files SET recognizedText=concat_ws('', recognizedText, '${text}') WHERE id=${recId}`)
+                let res = await conn.query(`UPDATE files SET recognizedText=concat_ws('', recognizedText, '${text}') WHERE id=${recId}`);
+                let resM0 = await conn.query(`INSERT INTO marks (time_msec, recognition0, file_id) VALUES (${timecode*1000},'${ r.result.recognitionResults.variant[0]._ }', ${recId})`);
                 console.log(text, '--- ЗАПИСАН')
+                timecode += segmentSize_sec;
             }catch(e){
                 console.error(e);
             }
