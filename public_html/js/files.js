@@ -8,6 +8,9 @@ const STANDARD_QUERY = `SELECT id,
                         '>>>' as play,
                         'Просмотр' as view,
                         description, 
+recognizedText,
+recognitionStatus,
+
                         file_created_UTC,
                         file_created_LOCAL,
                         file_updated_LOCAL,
@@ -21,7 +24,7 @@ const STANDARD_QUERY = `SELECT id,
                         fileExt,
                         'Скачать' as download,
                         'Опись' as marks
-                    FROM files `;   
+                    FROM files ORDER BY id DESC`;
 
 /**
  * Картинки для кнопок
@@ -84,7 +87,8 @@ const FORMAT_FILES_COLUMNS = [
                 },
                 body: JSON.stringify({
                     inputPath: UPLOAD_PATH + cell.getRow().getData().name, 
-                    fragmentDuration:15
+                    fragmentDuration:15,
+                    recId: REC_ID
                 }
               )
             });
@@ -103,7 +107,8 @@ const FORMAT_FILES_COLUMNS = [
                 
                 cell.getTable().updateData([{id: REC_ID, recognizedText:text}])
                     .then(async function(){
-                     let sqlres = await sql( `UPDATE files SET recognizedText='${text}' WHERE id=${cell.getRow().getData().id}`);
+                    console.log('Распознан текст:', text);
+                     // let sqlres = await sql( `UPDATE files SET recognizedText='${text}' WHERE id=${cell.getRow().getData().id}`);
                 })
             }
         } 

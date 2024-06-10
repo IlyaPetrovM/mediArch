@@ -6,3 +6,4 @@ config.js
 temp_audio/*
 out/
 users.js
+vosk-model-small-ru-0.22/*

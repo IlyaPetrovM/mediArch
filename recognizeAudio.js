@@ -1,8 +1,9 @@
-const config  = require('./config')
+    const config  = require('./config')
 const fs = require('fs');
 const path = require('path');
 const xml2js = require('xml2js')
 
+const mysql = require('mysql')
 
 const { exec } = require('child_process');
 var yandex_speech = require('yandex-speech');
@@ -21,10 +22,10 @@ var yandex_speech = require('yandex-speech');
  * @param [out] callback - функция, которая запускается, когда файлы обработаны
  * @return 
  */
-function recognizeAudio(inputPath, tempDir, segmentSize_sec = 60, callback) {
+function recognizeAudio(inputPath, tempDir, recId, segmentSize_sec = 60, callback) {
     const fileName = path.basename(inputPath);
 
-    const outputDir = tempDir + fileName + '/'
+    const outputDir = tempDir + recId + fileName + '/'
     if (!fs.existsSync(outputDir))
         fs.mkdirSync(outputDir)
 
@@ -39,7 +40,7 @@ function recognizeAudio(inputPath, tempDir, segmentSize_sec = 60, callback) {
             console.error(`stderr: ${stderr}`);
         }
         console.log(`Аудиофайл успешно разделен на фрагменты по ${segmentSize_sec}  секунд.`);
-        recogAudioFragmInDir(outputDir).then(callback);
+        recogAudioFragmInDir(outputDir, recId).then(callback);
         console.log('ГОТОВО')
     });
 }
@@ -49,7 +50,7 @@ function recognizeAudio(inputPath, tempDir, segmentSize_sec = 60, callback) {
  * @param [in] directoryPath - папка, где лежат файлы для распознавания
  * @return JSON с названиями файлов и распознаным текстом
  */
-async function recogAudioFragmInDir(directoryPath) {
+async function recogAudioFragmInDir(directoryPath, recId) {
     return new Promise((resolve)=>{ 
         var res = {}
         fs.readdir(directoryPath, async function (err, files) {
@@ -58,6 +59,7 @@ async function recogAudioFragmInDir(directoryPath) {
             return;
         }
         console.log('Файлы в указанной папке:');
+        const conn = mysql.createConnection(config.DB)
         for (let i in files){
             console.log('Обрабатываю файл', files[i])
             
@@ -66,9 +68,17 @@ async function recogAudioFragmInDir(directoryPath) {
             
             console.log(files[i], 'ГОТОВ\n\n')
             
+            const text = r.filename + ':'+ r.result.recognitionResults.variant[0]._ + ' \n'
+            try{
+                let res = await conn.query(`UPDATE files SET recognizedText=concat_ws('', recognizedText, '${text}') WHERE id=${recId}`)
+                console.log(text, '--- ЗАПИСАН')
+            }catch(e){
+                console.error(e);
+            }
             fs.unlink(directoryPath + files[i],  
                       err => {if (err) {console.error(`Ошибка при удалении файла ${directoryPath + files[i]}:`, err)} else {console.log(`Файл ${directoryPath + files[i]} успешно удален`)}})
         }
+            conn.end();
         resolve(res)
     })});
 }

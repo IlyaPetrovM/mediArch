@@ -157,11 +157,29 @@ app.post('/api/sql/dataOnly', function(req, res) {
 */
 app.post('/api/speech-recognition', function(req, res) {
     
-    const {inputPath, fragmentDuration} = req.body
+    const {inputPath, fragmentDuration, recId} = req.body
     
-    recognizeAudio('public_html/' + inputPath, 'temp_audio/', fragmentDuration, function(data){
-        console.log('\n  Удалось обработать кусочки:', data)
-        res.send(JSON.stringify({data}))
+    recognizeAudio('public_html/' + inputPath, 'temp_audio/', recId, fragmentDuration, function(fragments){
+        console.log('\n  Удалось обработать кусочки:', fragments)
+        //todo sql-запрос
+
+//        text = ''
+//        for (let i in fragments){
+//            text += i + ':'+ fragments[i].recognitionResults.variant[0]._ + ' '
+//        }
+//
+        const conn = mysql.createConnection(config.DB)
+//        conn.query(`UPDATE files SET recognizedText= concat_ws(recognizedText, '${text}') WHERE id=${recId}`, (errors, data, fields) => {
+//            if (errors) console.error(errors);
+//            console.log(text, '--- ЗАПИСАН')
+//        });
+        conn.query(`UPDATE files SET recognitionStatus='Готово' WHERE id=${recId}`, (errors, data, fields) => {
+            if (errors) console.error(errors);
+            console.log('Статус ГОТОВО')
+        });
+        conn.end();
+
+        res.send(JSON.stringify({fragments}))
     })
 });
 

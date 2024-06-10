@@ -21,6 +21,8 @@
     "file-metadata": "^3.0.0",
     "mysql": "^2.18.1",
     "node-fetch": "^3.2.6",
+    "subtitle": "^4.2.1",
+    "vosk": "^0.3.39",
     "xml2js": "^0.6.2",
     "yandex-speech": "^0.0.14"
   }
