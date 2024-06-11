@@ -22,6 +22,7 @@ recognitionStatus,
                         name, 
                         fileType,
                         fileExt,
+                        '' as informants,
                         'Скачать' as download,
                         'Опись' as marks
                     FROM files ORDER BY id DESC`;
@@ -185,6 +186,12 @@ const FORMAT_FILES_COLUMNS = [
         width:     60,
         hozAlign:  "center",
     },
+    //informants
+    {
+        title: "Люди",
+        field: 'informants',
+        formatter: 'textarea'
+    },
 ];
 /**
  * @brief Запуск распознавания текста в аудио
@@ -230,6 +237,21 @@ var table = new Tabulator("#fileTable", {
 table.on('tableBuilt', function(e){
     loadDataToTable(STANDARD_QUERY)
 });
+
+table.on('dataLoaded', async function(data){
+    if(!data) return;
+    console.log(data);
+    data.forEach(async (file) => {
+        try{
+            const res = await sql(`SELECT * FROM files_to_informants WHERE file_id=${file.id}`);
+            table.updateData([{
+                id: file.id,
+                informants:JSON.stringify(res.data)
+            }])
+        }catch(err) {console.log(err);}
+    })
+});
+
 
 /**
 * Поведение строки поиска
