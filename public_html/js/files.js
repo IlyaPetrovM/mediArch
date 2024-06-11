@@ -70,48 +70,7 @@ const FORMAT_FILES_COLUMNS = [
         title: "Распознавание",
         field: 'recognitionStatus',
         hozAlign:  "center",  
-        cellClick: async function(e, cell){
-            const REC_ID = cell.getRow().getData().id
-
-            cell.getTable().updateData([{id: REC_ID, recButton:'Обработка...'}])
-                .then(async function(){
-                     let sqlres = await sql( `UPDATE files SET recognitionStatus='Обработка' WHERE id=${REC_ID}`);
-                })
-            
-            
-            
-            let response = await fetch('/api/speech-recognition', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    inputPath: UPLOAD_PATH + cell.getRow().getData().name, 
-                    fragmentDuration:15,
-                    recId: REC_ID
-                }
-              )
-            });
-            if (response.ok) {
-                cell.getTable().updateData([{id: cell.getRow().getData().id, recButton:'Готово'}]).then(async function(){
-                     let sqlres = await sql( `UPDATE files SET recognitionStatus='Готово' WHERE id=${REC_ID}`);
-                })
-                
-                let res = await response.json()
-                console.log("Распознан текст", res)
-                const fragments = res.data
-                text = ''
-                for (let i in fragments){
-                    text += i + ':'+ fragments[i].recognitionResults.variant[0]._ + ' '
-                }
-                
-                cell.getTable().updateData([{id: REC_ID, recognizedText:text}])
-                    .then(async function(){
-                    console.log('Распознан текст:', text);
-                     // let sqlres = await sql( `UPDATE files SET recognizedText='${text}' WHERE id=${cell.getRow().getData().id}`);
-                })
-            }
-        } 
+        cellClick: (e, cell) => { startRecognition(cell.getRow().getData().id, UPLOAD_PATH + cell.getRow().getData().name, cell);}
     },
     //fileType
     {
@@ -227,6 +186,34 @@ const FORMAT_FILES_COLUMNS = [
         hozAlign:  "center",
     },
 ];
+/**
+ * @brief Запуск распознавания текста в аудио
+ * @param [in] e - событие
+ * @param [in] cell - ячейка таблицы
+ * @return Description of returned value.
+ */
+async function startRecognition(REC_ID, inputPath, cell) {
+
+    cell.getTable().updateData([{
+            id: REC_ID,
+            recButton: 'Обработка...'
+        }])
+        .then(async function () {
+            let sqlres = await sql(`UPDATE files SET recognitionStatus='Обработка' WHERE id=${REC_ID}`);
+        });
+
+    let response = await fetch('/api/speech-recognition', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            inputPath: inputPath,
+            fragmentDuration: 15,
+            recId: REC_ID
+        })
+    });
+}
 
 /**
  * MAIN CODE -  начало основного кода

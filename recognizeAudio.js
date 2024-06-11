@@ -72,7 +72,10 @@ async function recogAudioFragmInDir(directoryPath, recId, segmentSize_sec) {
             const text = r.filename + ':'+ r.result.recognitionResults.variant[0]._ + ' \n'
             try{
                 let res = await conn.query(`UPDATE files SET recognizedText=concat_ws('', recognizedText, '${text}') WHERE id=${recId}`);
-                let resM0 = await conn.query(`INSERT INTO marks (time_msec, recognition0, file_id) VALUES (${timecode*1000},'${ r.result.recognitionResults.variant[0]._ }', ${recId})`);
+                let resM0 = await conn.query(`INSERT INTO marks (time_msec, recognition0, recognition1, recognition2, file_id)
+                                                    VALUES (${timecode*1000},'${ r.result.recognitionResults.variant[0]._ }',
+                                                                             '${ r.result.recognitionResults.variant[1]._ }',
+                                                                             '${ r.result.recognitionResults.variant[2]._ }', ${recId})`);
                 console.log(text, '--- ЗАПИСАН')
                 timecode += segmentSize_sec;
             }catch(e){

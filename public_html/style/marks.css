@@ -1,0 +1,11 @@
+.diffWord {
+    color:#af2c46
+}
+
+.diffWord::before {
+    content:''
+}
+
+.diffWord::after {
+    content:''
+}

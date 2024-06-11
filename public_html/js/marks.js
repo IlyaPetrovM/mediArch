@@ -11,12 +11,14 @@ const QUERY_MARKS = `SELECT  id,
                             time_msec,
                             tags, 
                             describtion,
-recognition0,
-recognition1,
+                            recognition0,
+                            recognition1,
+                            recognition2,
                             hide
                         FROM marks
                         WHERE 
                         file_id = ${FILE_ID} and hide <> 1 ORDER BY time_msec ASC`;
+
 
 const FORMAT_MARKS_COLUMNS = [   
     {
@@ -47,6 +49,7 @@ const FORMAT_MARKS_COLUMNS = [
     {
         field: 'describtion',
         editor: 'textarea',
+        formatter:'textarea',
         cellEdited: async function(cell){
             let edit_result = await sql(
                 `UPDATE marks SET describtion = '${cell.getValue()}' WHERE id = ${cell.getRow().getData().id}`)
@@ -55,8 +58,16 @@ const FORMAT_MARKS_COLUMNS = [
     },
         {
         field: 'recognition0',
-        editor: 'textarea',
-        formatter:'textarea'
+        formatter:(cell)=>{cell.getElement().style.whiteSpace = "pre-wrap"; return  textDiff(cell.getValue(), cell.getRow().getData().recognition1, cell.getRow().getData().recognition2);}
+    },
+            {
+        field: 'recognition1',
+        formatter: (cell)=>{cell.getElement().style.whiteSpace = "pre-wrap"; return textDiff(cell.getValue(), cell.getRow().getData().recognition0, cell.getRow().getData().recognition2);},
+
+    },
+            {
+        field: 'recognition2',
+        formatter: (cell)=>{cell.getElement().style.whiteSpace = "pre-wrap"; return textDiff(cell.getValue(), cell.getRow().getData().recognition0, cell.getRow().getData().recognition1); }
     },
     {
         title:'',
@@ -76,7 +87,34 @@ const FORMAT_MARKS_COLUMNS = [
 ]
 
 
+/**
+ * @brief Выделяет красным различающиеся слова в тексте
+ * @param [in] String mainText - текст, в котором будут выделяться красным слова
+ * @param [in] String text2 - ещё текст
+ * @param [in] String text3 - ещё текст
+ * @return mainText но с выделенными словами
+ */
+function textDiff(mainText, text2, text3) {
+    const texts = [mainText, text2, text3];
+    const wordsMap = {};
 
+    texts.forEach(text => {
+        const words = text.split(/\s+/);
+        words.forEach(word => {
+            if (!wordsMap[word]) {
+                wordsMap[word] = 1;
+            } else {
+                wordsMap[word]++;
+            }
+        });
+    });
+    const differingWords = Object.keys(wordsMap).filter(word => wordsMap[word] < texts.length);
+    let diffText = mainText;
+    differingWords.forEach(uniqueWord => {
+        diffText = diffText.replace(uniqueWord, `<span class='diffWord'>${uniqueWord}</span>`);
+    })
+    return diffText;
+}
 
 /**
  * @brief Главная функция
