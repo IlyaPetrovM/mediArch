@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS `marks` (
   `time_msec` int(11) DEFAULT 0,
   `recognition0` text DEFAULT NULL,
   `recognition1` text DEFAULT NULL,
+  `recognition2` text DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `file_id` (`file_id`) USING BTREE,
   KEY `start_time` (`start_time`),
