@@ -8,9 +8,8 @@ const STANDARD_QUERY = `SELECT id,
                         '>>>' as play,
                         'Просмотр' as view,
                         description, 
-recognizedText,
-recognitionStatus,
-
+                        recognizedText,
+                        recognitionStatus,
                         file_created_UTC,
                         file_created_LOCAL,
                         file_updated_LOCAL,
@@ -24,7 +23,8 @@ recognitionStatus,
                         fileExt,
                         'Скачать' as download,
                         'Опись' as marks
-                    FROM files ORDER BY id DESC`;
+                    FROM files`;
+const ORDER_BY = ` ORDER BY id DESC`;
 
 /**
  * Картинки для кнопок
@@ -228,7 +228,7 @@ var table = new Tabulator("#fileTable", {
     autoColumnsDefinitions: FORMAT_FILES_COLUMNS
 });
 table.on('tableBuilt', function(e){
-    loadDataToTable(STANDARD_QUERY)
+    loadDataToTable(STANDARD_QUERY + ORDER_BY)
 });
 
 /**
@@ -259,7 +259,7 @@ function downloadFile(eventOnClick, path){
 function startSearch() {
     let where = ''
     if (!(srch.value === undefined || srch.value === '')){
-        where = `  WHERE (description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
+        where = `  WHERE (description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' )` + ORDER_BY
     }
     loadDataToTable(STANDARD_QUERY + where);
 }
