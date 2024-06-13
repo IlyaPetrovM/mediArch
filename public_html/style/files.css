@@ -1,3 +1,14 @@
 .previewImage{
     height: 50px;
 }
+
+.tags {
+    padding: 0 10px;
+    line-height: 25px;
+    margin: 8px;
+    border-radius: 15px;
+    background: rgba(0, 0, 0, 0.1);
+}
+.tags:hover {
+    background: rgba(0, 0, 0, 0.2);
+}

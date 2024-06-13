@@ -4,13 +4,12 @@
 const UPLOAD_PATH = 'uploads/'; // must en with '/'
 
 // Запрос к таблице
-const STANDARD_QUERY = `SELECT id, 
+const STANDARD_QUERY = `SELECT f.id as id,
                         '>>>' as play,
                         'Просмотр' as view,
-                        description, 
-recognizedText,
-recognitionStatus,
-
+                        f.description description,
+                        f.recognizedText recognizedText,
+                        recognitionStatus,
                         file_created_UTC,
                         file_created_LOCAL,
                         file_updated_LOCAL,
@@ -19,13 +18,19 @@ recognitionStatus,
                         date_upload_UTC,
                         date_updated_timezone,
                         oldName, 
-                        name, 
+                        f.name name,
                         fileType,
                         fileExt,
-                        '' as informants,
+                        GROUP_CONCAT( CONCAT_WS('',  '{"id":"'  ,inf.id, '","fio":"', inf.last_name, ' ', inf.first_name,' ', inf.middle_name, '"}' ) separator ', ') AS informants,
                         'Скачать' as download,
                         'Опись' as marks
-                    FROM files ORDER BY id DESC`;
+                    FROM ((files as f
+                            LEFT JOIN files_to_informants AS conn ON (conn.file_id = f.id) )
+                            LEFT JOIN informants inf ON (conn.inf_id = inf.id)) GROUP BY f.id`;
+const ORDER_BY = ` ORDER BY id DESC `;
+let START_PAGE = 0;
+let OFFSET = 10;
+let where = '';
 
 /**
  * Картинки для кнопок
@@ -49,17 +54,30 @@ const FORMAT_FILES_COLUMNS = [
     //description
     {
         field: 'description', 
-        editor: 'list',
+        editor: 'autocomplete',
         width:250 ,
-        editorParams:{autocomplete:"true", allowEmpty:true,listOnEmpty:true, valuesLookup:true, freetext:true},
+        editorParams:{autocomplete:"true",
+                      allowEmpty:true,
+                      listOnEmpty:true,
+                      valuesLookup:true,
+                      freetext:true},
         cellEdited: async function (cell){ 
             let res = await sql( `UPDATE files SET description='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
         },
+    },
+    {
+        field: 'name',
+        visible: false,
+    },
+    {
+        field: 'oldName',
+        visible: false,
     },
     //recognizedText
     {
         field: 'recognizedText', 
         editor: 'textarea',
+        visible: false,
         width:200,
         cellEdited: async function (cell){ 
             let res = await sql( `UPDATE files SET recognizedText='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
@@ -77,6 +95,7 @@ const FORMAT_FILES_COLUMNS = [
     {
         title: "Тип",
         field: 'fileType',
+        visible: false,
         editor: 'list',
         hozAlign: "center",
         editorParams: {
@@ -131,7 +150,8 @@ const FORMAT_FILES_COLUMNS = [
     //date_created_GMT
     {
         title: "Дата съёмки",
-        field: 'date_created_GMT',
+        field: 'file_created_UTC',
+        visible: false,
         width:     100,
         formatter: (e) => {
             if(e.getValue() != undefined)
@@ -140,15 +160,10 @@ const FORMAT_FILES_COLUMNS = [
         }
     },
     //date_upload
-     {
-        title: "Часовой пояс даты съёмки",
-        field: 'date_created_timezone',
-        width:     60,
-    },
-    //date_upload
     {
         title: "Дата загрузки",
-        field: 'date_upload',
+        field: 'date_upload_UTC',
+        visible: false,
         width:     100,
         formatter: (e) => {
             if(e.getValue() != undefined)
@@ -160,12 +175,14 @@ const FORMAT_FILES_COLUMNS = [
     {
         title: "Часовой пояс даты загрузки",
         field: 'date_upload_timezone',
+        visible: false,
         width:     60,
     },
     //date_updated
     {
         title: "Дата обновления",
-        field: 'date_updated',
+        field: 'file_updated_LOCAL',
+        visible: false,
         width:     100,
         formatter: (e) => {
             if(e.getValue() != undefined)
@@ -177,12 +194,21 @@ const FORMAT_FILES_COLUMNS = [
      {
         title: "Часовой пояс даты обновления",
         field: 'date_updated_timezone',
+         visible: false,
+        width:     60,
+    },
+        //date_updated_timezone
+     {
+        title: "Часовой пояс даты обновления",
+        field: 'file_created_LOCAL',
+         visible: false,
         width:     60,
     },
     //fileExt
     {
         title: "Расширение",
         field: 'fileExt',
+        visible: false,
         width:     60,
         hozAlign:  "center",
     },
@@ -190,9 +216,52 @@ const FORMAT_FILES_COLUMNS = [
     {
         title: "Люди",
         field: 'informants',
-        formatter: 'textarea'
+        formatter: (cell)=>{
+            cell.getElement().style.whiteSpace = "pre-wrap";
+            if(cell.getValue() == `{"id":"","fio":"  "}`) return null;
+            try{
+                const informants = JSON.parse('['+ cell.getValue() + ']');
+
+                let tags = document.createElement('span')
+                for(let inf of informants){
+                    const span = document.createElement('span');
+                    span.className = 'tags'
+                    const content = document.createElement('span');
+                    content.innerHTML = inf.fio
+
+                    const cross = document.createElement('span');
+                    cross.innerHTML = ' x '
+                    span.appendChild(content);
+                    span.appendChild(cross);
+
+                    tags.appendChild(span)
+                }
+                return tags.innerHTML;
+            }catch(e){
+                console.log(e)
+                return null;
+            }
+
+        }
     },
 ];
+/**
+ * @brief Загружает для каждого объекта
+ * @param [in] Array of Objects data
+ * @return none
+ */
+function loadInformants(table, data) {
+//    data.forEach(async (file) => {
+//        try{
+//            const res = await sql(`SELECT * FROM files_to_informants WHERE file_id=${file.id}`);
+//            table.updateData([{
+//                id: file.id,
+//                informants:res.data
+//            }])
+//        }catch(err) {console.log(err);}
+//    })
+}
+
 /**
  * @brief Запуск распознавания текста в аудио
  * @param [in] e - событие
@@ -227,29 +296,40 @@ async function startRecognition(REC_ID, inputPath, cell) {
  */
 
 var table = new Tabulator("#fileTable", {
-    height:"100%",
+    height:"800px",
     layout: "fitColumns",
     placeholder: "Введите поисковую фразу",
     ajaxContentType: "json",
     autoColumns: true,
+    rowHeader:{formatter:"rownum", headerSort:true, hozAlign:"center", resizable:true, frozen:true},
     autoColumnsDefinitions: FORMAT_FILES_COLUMNS
 });
 table.on('tableBuilt', function(e){
-    loadDataToTable(STANDARD_QUERY)
+    loadDataToTable(STANDARD_QUERY  + where + ORDER_BY + ` LIMIT ${START_PAGE},${START_PAGE+OFFSET} `)
 });
+
+nextPage.addEventListener('click', (event)=>{
+    START_PAGE += OFFSET;
+    if(START_PAGE > 0) {
+        prevPage.hidden = false;
+    }
+     loadDataToTable(STANDARD_QUERY  + where + ORDER_BY + ` LIMIT ${START_PAGE},${START_PAGE+OFFSET} `);
+})
+
+prevPage.addEventListener('click', (event)=>{
+    START_PAGE -= OFFSET;
+    if(START_PAGE <= 0) {
+        START_PAGE = 0;
+        prevPage.hidden = true;
+    }
+     loadDataToTable(STANDARD_QUERY + where  + ORDER_BY + ` LIMIT ${START_PAGE},${START_PAGE+OFFSET} `);
+})
+
 
 table.on('dataLoaded', async function(data){
     if(!data) return;
     console.log(data);
-    data.forEach(async (file) => {
-        try{
-            const res = await sql(`SELECT * FROM files_to_informants WHERE file_id=${file.id}`);
-            table.updateData([{
-                id: file.id,
-                informants:JSON.stringify(res.data)
-            }])
-        }catch(err) {console.log(err);}
-    })
+    loadInformants(table, data);
 });
 
 
@@ -279,11 +359,11 @@ function downloadFile(eventOnClick, path){
     Поиск по таблице
 */
 function startSearch() {
-    let where = ''
+
     if (!(srch.value === undefined || srch.value === '')){
-        where = `  WHERE (description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
+        where = `  HAVING (description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
     }
-    loadDataToTable(STANDARD_QUERY + where);
+    loadDataToTable(STANDARD_QUERY + where + ORDER_BY + ` LIMIT ${START_PAGE},${START_PAGE+OFFSET} `);
 }
 
 /**
