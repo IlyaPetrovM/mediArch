@@ -305,20 +305,21 @@ function editorInformants(filesCell, onRendered, success, cancel, editorParams) 
                 const prevValue = cell.getValue();
                 const inf_id = cell.getData().id;
                 cell.setValue( prevValue ? null : true );
-
+                console.log(prevValue)
                 if(prevValue===null){
                     // значит нам надо добавить запись в таблицу
                     sql(`INSERT INTO files_to_informants (file_id, inf_id) VALUES (${file_id}, ${inf_id})`)
                     .then(res => {
                         console.log(res);
                         // todo^ update cell in page
+                        const prevInfs = filesCell.getValue();
+                        console.log(prevInfs);
                     }).catch(e => {
                         console.error(e)
                         alert('Не удалось отметить информанта');
                     })
-                }
-                if(prevValue===true){
-                    sql(`DELETE FROM files_to_informants WHERE file_id = ${file_id} AND inf_id = ${inf_id})`)
+                }else{
+                    sql(`DELETE FROM files_to_informants WHERE (file_id = ${file_id} AND inf_id = ${inf_id})`)
                     .then(res => {
                         console.log(res);
                     }).catch(e => {
