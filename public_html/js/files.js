@@ -21,7 +21,18 @@ const STANDARD_QUERY = `SELECT f.id as id,
                         f.name name,
                         fileType,
                         fileExt,
-                        GROUP_CONCAT( CONCAT_WS('',  '{"id":"'  ,inf.id, '","fio":"', inf.last_name, ' ', inf.first_name,' ', inf.middle_name, '"}' ) separator ', ') AS informants,
+                        CONCAT(
+                            '[',
+                                GROUP_CONCAT( DISTINCT 
+                                    JSON_OBJECT( 
+                                        "id",          inf.id, 
+                                        "last_name",   inf.last_name, 
+                                        "first_name",  inf.first_name,
+                                        "middle_name", inf.middle_name
+                                    )
+                                ),
+                            ']'
+                            ) AS informants,
                         'Скачать' as download,
                         'Опись' as marks
                     FROM ((files as f
@@ -53,16 +64,18 @@ const FORMAT_FILES_COLUMNS = [
     },
     //description
     {
-        field: 'description', 
-        editor: 'autocomplete',
-        width:250 ,
-        editorParams:{autocomplete:"true",
-                      allowEmpty:true,
-                      listOnEmpty:true,
-                      valuesLookup:true,
-                      freetext:true},
-        cellEdited: async function (cell){ 
-            let res = await sql( `UPDATE files SET description='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
+        field: 'description',
+        editor: 'list',
+        width: 250,
+        editorParams: {
+            autocomplete: "true",
+            allowEmpty: true,
+            listOnEmpty: true,
+            valuesLookup: true,
+            freetext: true
+        },
+        cellEdited: async function (cell) {
+            let res = await sql(`UPDATE files SET description='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
         },
     },
     {
@@ -216,35 +229,173 @@ const FORMAT_FILES_COLUMNS = [
     {
         title: "Люди",
         field: 'informants',
-        formatter: (cell)=>{
-            cell.getElement().style.whiteSpace = "pre-wrap";
-            if(cell.getValue() == `{"id":"","fio":"  "}`) return null;
-            try{
-                const informants = JSON.parse('['+ cell.getValue() + ']');
-
-                let tags = document.createElement('span')
-                for(let inf of informants){
-                    const span = document.createElement('span');
-                    span.className = 'tags'
-                    const content = document.createElement('span');
-                    content.innerHTML = inf.fio
-
-                    const cross = document.createElement('span');
-                    cross.innerHTML = ' x '
-                    span.appendChild(content);
-                    span.appendChild(cross);
-
-                    tags.appendChild(span)
-                }
-                return tags.innerHTML;
-            }catch(e){
-                console.log(e)
-                return null;
+        editor: editorInformants,
+//        editorParams: {
+//            valuesLookup: true,
+//            multiselect: true,
+//            clearable:true,
+//            valuesLookup: getInformantsList
+//        },
+        mutator: (value, data, type, params, component)=>{
+            console.log(value, type)
+            if(type == 'data'){
+                 return JSON.parse(value);
             }
+            return value;
+        },
+        formatter: formatInformantList
+//        (cell)=>{
 
-        }
-    },
+//
+//        }
+    }, 
 ];
+function editorInformants(filesCell, onRendered, success, cancel, editorParams) {
+  //cell - the cell component for the editable cell
+  //onRendered - function to call when the editor has been rendered
+  //success - function to call to pass thesuccessfully updated value to Tabulator
+  //cancel - function to call to abort the edit and return to a normal cell
+  //editorParams - params object passed into the editorParams column definition property
+  var modal = new bootstrap.Modal(document.getElementById('informantSelector'));
+  // Toggle Modal
+  modal.toggle();
+  const informantSelectorBody = document.getElementById(
+    'informantSelectorBody'
+  );
+  const file_id = filesCell.getData().id;
+  sql(`SELECT i.id AS id, i.last_name AS last_name, i.first_name AS first_name, (fti.file_id = ${file_id})  AS file_id
+        FROM informants i 
+        LEFT JOIN ( SELECT * FROM files_to_informants WHERE file_id = ${file_id} ) fti 
+        ON fti.inf_id = i.id 
+        ORDER BY file_id desc, last_name ASC` ).then((res) => {
+    console.log(res);
+    const infTable = new Tabulator('#informantsTable', {
+      // height:"100%",
+      layout: 'fitColumns',
+      placeholder: 'Информанты',
+      ajaxContentType: 'json',
+      autoColumns: true,
+      data: res.data,
+      autoColumnsDefinitions: [
+        {
+            field: 'id',
+            title: 'id',
+            visible:false,
+            width: 30,            
+          },
+        {
+          field: 'last_name',
+          title: 'Фамилия',
+          headerFilter: 'input',
+        },
+        {
+          field: 'first_name',
+          title: 'Имя',
+          headerFilter: 'input',
+        },
+        {
+            field: 'file_id',
+            title: 'file_id',
+            formatter:'tickCross',
+            formatterParams: {
+                allowEmpty:true,
+                allowTruthy:true,
+            },
+            cellClick: (e, cell)=>{
+                const prevValue = cell.getValue();
+                const inf_id = cell.getData().id;
+                cell.setValue( prevValue ? null : true );
+
+                if(prevValue===null){
+                    // значит нам надо добавить запись в таблицу
+                    sql(`INSERT INTO files_to_informants (file_id, inf_id) VALUES (${file_id}, ${inf_id})`)
+                    .then(res => {
+                        console.log(res);
+                        // todo^ update cell in page
+                    }).catch(e => {
+                        console.error(e)
+                        alert('Не удалось отметить информанта');
+                    })
+                }
+                if(prevValue===true){
+                    sql(`DELETE FROM files_to_informants WHERE file_id = ${file_id} AND inf_id = ${inf_id})`)
+                    .then(res => {
+                        console.log(res);
+                    }).catch(e => {
+                        console.error(e)
+                        alert('Не удалось отметить информанта');
+                    })
+                }
+            },
+            visible:true,
+            width: 30,
+          },
+      ],
+    });
+    document.getElementById('closeModalButton').onclick = function(){
+        infTable.destroy();
+        console.log(infTable);
+    }
+  });
+  
+}
+
+function formatInformantList(cell){
+    cell.getElement().style.whiteSpace = "pre-wrap";
+    try{
+        const informants = cell.getValue();
+
+        if(informants.length == 0 || informants[0].id == null) return null;
+        console.log(informants);
+
+        let tags = document.createElement('span')
+        for(let inf of informants){
+            const span = document.createElement('span');
+            span.className = 'tags'
+            const content = document.createElement('span');
+            content.innerHTML = inf.last_name + ' ' + inf.first_name[0] + '.' + (inf.middle_name[0] || '')
+
+            const cross = document.createElement('span');
+            cross.innerHTML = ' x '
+            span.appendChild(content);
+            span.appendChild(cross);
+
+            tags.appendChild(span)
+        }
+        return tags.innerHTML;
+    }catch(e){
+        console.log(e)
+        return null;
+    }
+}
+/**
+ * @brief Получает список всех информантов
+ * @param [in] cell - the cell component for the current cell
+ * @param [in] filterTerm - the current value of the input element
+ * @return Array of informants 
+ */
+async function getInformantsList(cell, filterTerm) {
+    console.log(cell.getElement());
+
+    try {
+        const res = await sql(`SELECT id, last_name, first_name, middle_name FROM informants`);
+        if (res.error) {
+            console.log(res.error)
+            return null;
+        }
+        const options = [];
+        res.data.forEach(inf => {
+            options.push({
+                label: inf.last_name + ' ' + inf.first_name[0] + '.' + (inf.middle_name[0] || '') + ";",
+                value: inf
+            })
+        })
+        return options;
+    } catch (e) {
+        console.error(e);
+        return cell.getValue();
+    }
+}
 /**
  * @brief Загружает для каждого объекта
  * @param [in] Array of Objects data

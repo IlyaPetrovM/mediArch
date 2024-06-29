@@ -198,6 +198,11 @@ const alphabet = {
     "я":"ya","ч":"ch","с":"s","м":"m","и":"i","т":"t","ь":"","б":"b","ю":"yu",
     ' ':'_'};
 
+/**
+ * Преобразует кириллицу в латиницу
+ * @param {String} word 
+ * @returns 
+ */
 function transliterate(word){
     
   return word.split('').map(function (char) { 
