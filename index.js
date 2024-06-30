@@ -26,7 +26,10 @@ app.use(express.json());
 app.use(session({
   secret: crypto.randomBytes(32).toString('hex'),
   resave: false,
-  saveUninitialized: true
+  saveUninitialized: true,
+  cookie: {
+    // maxAge: 1000 // 5 minutes
+  }
 }));
 
 app.get('/index.html',(req, res)=>{
@@ -42,6 +45,7 @@ app.post('/api/login', (req, res) => {
     const user = users.find(user => user.username === username && user.password === password);
     if(user) {
         req.session.user = user;
+        // req.session.cookie.maxAge = 500;
         res.send( {errors: null, data: 'ok', message: 'OK'} );
     }else{
          res.send( {errors: true, data: null, message: 'no auth. user does not found'} );

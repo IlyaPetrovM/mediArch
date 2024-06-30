@@ -29,7 +29,19 @@ CREATE TABLE IF NOT EXISTS `files` (
   `deviceModel` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `duration_ms` int(11) DEFAULT NULL,
   `gps_str` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_created` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `files_to_informants` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `inf_id` int(11) NOT NULL,
+  `file_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FK_informant` (`inf_id`),
+  KEY `FK_file` (`file_id`),
+  CONSTRAINT `FK_file` FOREIGN KEY (`file_id`) REFERENCES `files` (`id`),
+  CONSTRAINT `FK_informant` FOREIGN KEY (`inf_id`) REFERENCES `informants` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `informants` (

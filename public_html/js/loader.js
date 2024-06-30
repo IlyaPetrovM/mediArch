@@ -7,8 +7,28 @@ loaderForm.addEventListener('submit', (e) => {
 })
 
 
+let USERNAME = null;
+fetch('/api/session/username', {
+    method:'POST', headers: { 'Content-Type': 'application/json'},
+}).then(res => res.json())
+.then(json => {
+    USERNAME = json.data;
+})
 
 
+// let response = await fetch('/api/sql', {
+//     method: 'POST',
+//     headers: {
+//         'Content-Type': 'application/json'
+//     },
+//     body: JSON.stringify({
+//         'query': query,
+//         'inserts': inserts
+//     })
+// });
+// if (response.ok) {
+//     return await response.json();
+// }
 
 /** 
    Общее
@@ -53,8 +73,10 @@ async function load() {
 
         print(`... заносим информацию в БД ...`)
         const sql_res = await sql('INSERT INTO ?? (??) VALUES ( ? ) ',
-            ['files', ['oldName', 'name', 'fileExt', 'filetype', 'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str', 'exif'],
-                [files[i].name,
+            ['files', [ 'user_created','oldName', 'name', 'fileExt', 'filetype', 'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str', 'exif'],
+                [
+                    USERNAME, 
+                    files[i].name,
                  transliterate(files[i].name),
                  fext,
                  ftype,
