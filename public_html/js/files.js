@@ -229,33 +229,28 @@ const FORMAT_FILES_COLUMNS = [
     {
         title: "Люди",
         field: 'informants',
-        editor: editorInformants,
-//        editorParams: {
-//            valuesLookup: true,
-//            multiselect: true,
-//            clearable:true,
-//            valuesLookup: getInformantsList
-//        },
+        cellClick: (e, cell)=>{editorInformants(cell)},
         mutator: (value, data, type, params, component)=>{
             console.log(value, type)
             if(type == 'data'){
-                 return JSON.parse(value);
+                const informants = JSON.parse(value);
+                if (informants.length == 1 && informants[0].id === null) return [];
+                 return informants;
             }
             return value;
         },
         formatter: formatInformantList
-//        (cell)=>{
-
-//
-//        }
     }, 
 ];
+
+
 function editorInformants(filesCell, onRendered, success, cancel, editorParams) {
   //cell - the cell component for the editable cell
   //onRendered - function to call when the editor has been rendered
   //success - function to call to pass thesuccessfully updated value to Tabulator
   //cancel - function to call to abort the edit and return to a normal cell
   //editorParams - params object passed into the editorParams column definition property
+
   var modal = new bootstrap.Modal(document.getElementById('informantSelector'));
   // Toggle Modal
   modal.toggle();
@@ -263,11 +258,19 @@ function editorInformants(filesCell, onRendered, success, cancel, editorParams) 
     'informantSelectorBody'
   );
   const file_id = filesCell.getData().id;
-  sql(`SELECT i.id AS id, i.last_name AS last_name, i.first_name AS first_name, (fti.file_id = ${file_id})  AS file_id
-        FROM informants i 
-        LEFT JOIN ( SELECT * FROM files_to_informants WHERE file_id = ${file_id} ) fti 
-        ON fti.inf_id = i.id 
-        ORDER BY file_id desc, last_name ASC` ).then((res) => {
+  const informantsInCell = filesCell.getValue();
+  sql(`SELECT i.id AS id,  
+        (fti.file_id = ${file_id})  AS file_id,
+        i.last_name AS last_name, 
+        i.first_name AS first_name, 
+        i.middle_name AS middle_name, 
+        i.nickname AS nickname
+    FROM informants i 
+    LEFT JOIN 
+        ( SELECT * FROM files_to_informants WHERE file_id = ${file_id} )  fti 
+    ON fti.inf_id = i.id 
+    WHERE i.hide <> 1
+    ORDER BY file_id desc, last_name ASC` ).then((res) => {
     console.log(res);
     const infTable = new Tabulator('#informantsTable', {
       // height:"100%",
@@ -280,9 +283,14 @@ function editorInformants(filesCell, onRendered, success, cancel, editorParams) 
         {
             field: 'id',
             title: 'id',
-            visible:false,
-            width: 30,            
-          },
+            visible: false,
+            width: 30,
+        },
+        {
+          field: 'nickname',
+          title: 'Короткое имя',
+          headerFilter: 'input',
+        },
         {
           field: 'last_name',
           title: 'Фамилия',
@@ -294,48 +302,68 @@ function editorInformants(filesCell, onRendered, success, cancel, editorParams) 
           headerFilter: 'input',
         },
         {
-            field: 'file_id',
-            title: 'file_id',
-            formatter:'tickCross',
-            formatterParams: {
-                allowEmpty:true,
-                allowTruthy:true,
-            },
-            cellClick: (e, cell)=>{
-                const prevValue = cell.getValue();
-                const inf_id = cell.getData().id;
-                cell.setValue( prevValue ? null : true );
-                console.log(prevValue)
-                if(prevValue===null){
-                    // значит нам надо добавить запись в таблицу
-                    sql(`INSERT INTO files_to_informants (file_id, inf_id) VALUES (${file_id}, ${inf_id})`)
-                    .then(res => {
-                        console.log(res);
-                        // todo^ update cell in page
-                        const prevInfs = filesCell.getValue();
-                        console.log(prevInfs);
-                    }).catch(e => {
-                        console.error(e)
-                        alert('Не удалось отметить информанта');
-                    })
-                }else{
-                    sql(`DELETE FROM files_to_informants WHERE (file_id = ${file_id} AND inf_id = ${inf_id})`)
-                    .then(res => {
-                        console.log(res);
-                    }).catch(e => {
-                        console.error(e)
-                        alert('Не удалось отметить информанта');
-                    })
-                }
-            },
-            visible:true,
-            width: 30,
+          field: 'middle_name',
+          title: 'Отчество',
+          headerFilter: 'input',
+        },
+        {
+          field: 'file_id',
+          title: 'Выбрать',
+          width: 50,
+          formatter: 'tickCross',
+          formatterParams: {
+            allowEmpty: false,
+            allowTruthy: true,
+            tickElement:"<input type=checkbox checked>",
+            crossElement:"<input type=checkbox>",
           },
+          cellClick: (e, cell) => {
+            const prevValue = cell.getValue();
+            const inf = cell.getData();
+
+            cell.setValue(prevValue ? null : true);
+            console.log(prevValue);
+            if (prevValue === null) {
+              // значит нам надо добавить запись в таблицу
+              sql(
+                `INSERT INTO files_to_informants (file_id, inf_id) VALUES (${file_id}, ${inf.id})`
+              )
+                .then((res) => {
+                  console.log(res);
+                  // todo^ update cell in page
+
+                  informantsInCell.push(inf);
+                })
+                .catch((e) => {
+                  console.error(e);
+                  alert('Не удалось отметить информанта');
+                });
+            } else {
+              sql(
+                `DELETE FROM files_to_informants WHERE (file_id = ${file_id} AND inf_id = ${inf.id})`
+              )
+                .then((res) => {
+                  const index = informantsInCell.findIndex(
+                    (elem) => elem.id == inf.id
+                  );
+                  informantsInCell.splice(index, 1);
+                  console.log('Успешно удалено');
+                })
+                .catch((e) => {
+                  console.error(e);
+                  alert('Не удалось отметить информанта');
+                });
+            }
+          },
+          visible: true,
+          width: 30,
+        },
       ],
     });
     document.getElementById('closeModalButton').onclick = function(){
         infTable.destroy();
-        console.log(infTable);
+        filesCell.setValue(informantsInCell);
+        filesCell.getRow().reformat();
     }
   });
   
@@ -343,10 +371,12 @@ function editorInformants(filesCell, onRendered, success, cancel, editorParams) 
 
 function formatInformantList(cell){
     cell.getElement().style.whiteSpace = "pre-wrap";
+
     try{
         const informants = cell.getValue();
+        console.log(informants);
 
-        if(informants.length == 0 || informants[0].id == null) return null;
+        if(informants.length == 0 || informants.length == 1 && informants[0].id === null) return null;
         console.log(informants);
 
         let tags = document.createElement('span')
