@@ -132,11 +132,30 @@ async function runMarks(){
     });
     
     
-    table.on('tableBuilt', function(e){ 
-    table.setData("api/sql/dataOnly", {
-            'query': QUERY_MARKS,
-            'inserts': ''
-        }, "POST");
+    table.on('tableBuilt', function (e) {
+      table.setData(
+        'api/sql/dataOnly',
+        {
+          query: QUERY_MARKS,
+          inserts: '',
+        },
+        'POST'
+      );
+    });
+    table.on('dataLoaded', (data) => {
+      console.log(data);
+      if (data.length === 0) {
+        // добавить первую метку
+        addMark(table, FILE_ID);
+        table.setData(
+          'api/sql/dataOnly',
+          {
+            query: QUERY_MARKS,
+            inserts: '',
+          },
+          'POST'
+        );
+      }
     });
     
     btnAddRow.onclick = function(){ addMark(table, FILE_ID);};
@@ -266,7 +285,7 @@ async function addMark(_table, _file_id){
             return;
         }
     }
-    const query = `INSERT INTO marks (start_time, time_msec, file_id) VALUES ('${String(previewVideo.currentTime).toHHMMSS()}', '${Number.parseInt(previewVideo.currentTime*1000)}', ${_file_id})`;
+    const query = `INSERT INTO marks (start_time, time_msec, file_id) VALUES ('${String(current_time_sec).toHHMMSS()}', '${cur_time_msec}', ${_file_id})`;
     let res = await sql(query);
     console.log(res);
     if (res.errors) {
@@ -275,8 +294,8 @@ async function addMark(_table, _file_id){
     }
     let row = _table.addRow({ 
         id: res.data.insertId, 
-        time_msec: Number.parseInt(previewVideo.currentTime*1000),
-        start_time: String(previewVideo.currentTime).toHHMMSS() 
+        time_msec: cur_time_msec,
+        start_time: String(current_time_sec).toHHMMSS() 
     });
     _table.deselectRow()
     _table.selectRow(res.data.insertId);
