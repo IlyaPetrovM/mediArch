@@ -65,8 +65,9 @@ const FORMAT_FILES_COLUMNS = [
     //description
     {
         field: 'description',
-        editor: 'list',
+        editor: 'textarea',
         width: 250,
+        formatter:'textarea',
         editorParams: {
             autocomplete: "true",
             allowEmpty: true,
@@ -544,6 +545,8 @@ function startSearch() {
 
     if (!(srch.value === undefined || srch.value === '')){
         where = `  HAVING (description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
+    }else{
+        where = '';
     }
     loadDataToTable(STANDARD_QUERY + where + ORDER_BY + ` LIMIT ${START_PAGE},${START_PAGE+OFFSET} `);
 }
