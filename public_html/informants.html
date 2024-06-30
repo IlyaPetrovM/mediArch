@@ -25,17 +25,17 @@ TODO аутентификация!!!
         <div class=row>
             <nav class="navbar navbar-expand-lg navbar-light bg-light">
                 <div class="container-fluid">
-                    <a class="navbar-brand">Архив экспедиции - Файлы</a>
-                    <nav>
-                        <a href='/files.html'>Файлы</a>
-                        <a href='/load.html'>Загрузка</a>
-                        <a href='/informants.html'>Информанты</a>
-                     </nav>
+                    <nav class="nav nav-tabs">
+                        <a href='/load.html' class="nav-link">Загрузка</a>
+                        <a href='/files.html' class="nav-link">Файлы</a>
+                        <a href='/informants.html' class="nav-link active">Информанты</a>
+                    </nav>
                     <button class="btn btn-primary" id='buttonAddInformant'>Добавить информанта</button>
                     <div class="d-flex">
                         <input id='inputSearchInformant' class="form-control me-2" type="search" placeholder="Введите фразу" value='' >
                         <button class="btn btn-outline-success" id='buttonSearchInformant'>Поиск</button>
                     </div>
+                    <a class="navbar-brand">Архив экспедиции - Информанты</a>
                 </div>
             </nav>
         </div>
