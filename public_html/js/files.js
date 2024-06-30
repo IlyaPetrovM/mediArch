@@ -39,8 +39,8 @@ const STANDARD_QUERY = `SELECT f.id as id,
                             LEFT JOIN files_to_informants AS conn ON (conn.file_id = f.id) )
                             LEFT JOIN informants inf ON (conn.inf_id = inf.id)) GROUP BY f.id`;
 const ORDER_BY = ` ORDER BY id DESC `;
-let START_PAGE = 0;
-let OFFSET = 10;
+let OFFSET = 0;
+let LIMIT = 10;
 let where = '';
 
 /**
@@ -66,7 +66,7 @@ const FORMAT_FILES_COLUMNS = [
     {
         field: 'description',
         editor: 'textarea',
-        width: 250,
+        width: 400,
         formatter:'textarea',
         editorParams: {
             autocomplete: "true",
@@ -103,6 +103,7 @@ const FORMAT_FILES_COLUMNS = [
         title: "Распознавание",
         field: 'recognitionStatus',
         hozAlign:  "center",  
+        visible:false,
         cellClick: (e, cell) => { startRecognition(cell.getRow().getData().id, UPLOAD_PATH + cell.getRow().getData().name, cell);}
     },
     //fileType
@@ -484,28 +485,28 @@ var table = new Tabulator("#fileTable", {
     placeholder: "Введите поисковую фразу",
     ajaxContentType: "json",
     autoColumns: true,
-    rowHeader:{formatter:"rownum", headerSort:true, hozAlign:"center", resizable:true, frozen:true},
+    // rowHeader:{formatter:"rownum", headerSort:true, hozAlign:"center", resizable:true, frozen:true},
     autoColumnsDefinitions: FORMAT_FILES_COLUMNS
 });
 table.on('tableBuilt', function(e){
-    loadDataToTable(STANDARD_QUERY  + where + ORDER_BY + ` LIMIT ${START_PAGE},${START_PAGE+OFFSET} `)
+    loadDataToTable(STANDARD_QUERY  + where + ORDER_BY + ` LIMIT ${LIMIT} OFFSET ${OFFSET}`)
 });
 
 nextPage.addEventListener('click', (event)=>{
-    START_PAGE += OFFSET;
-    if(START_PAGE > 0) {
+    OFFSET += LIMIT;
+    if(OFFSET > 0) {
         prevPage.hidden = false;
     }
-     loadDataToTable(STANDARD_QUERY  + where + ORDER_BY + ` LIMIT ${START_PAGE},${START_PAGE+OFFSET} `);
+     loadDataToTable(STANDARD_QUERY  + where + ORDER_BY + ` LIMIT ${LIMIT} OFFSET ${OFFSET}`);
 })
 
 prevPage.addEventListener('click', (event)=>{
-    START_PAGE -= OFFSET;
-    if(START_PAGE <= 0) {
-        START_PAGE = 0;
+    OFFSET -= LIMIT;
+    if(OFFSET <= 0) {
+        OFFSET = 0;
         prevPage.hidden = true;
     }
-     loadDataToTable(STANDARD_QUERY + where  + ORDER_BY + ` LIMIT ${START_PAGE},${START_PAGE+OFFSET} `);
+     loadDataToTable(STANDARD_QUERY + where  + ORDER_BY + ` LIMIT ${LIMIT} OFFSET ${OFFSET}`);
 })
 
 
@@ -548,7 +549,7 @@ function startSearch() {
     }else{
         where = '';
     }
-    loadDataToTable(STANDARD_QUERY + where + ORDER_BY + ` LIMIT ${START_PAGE},${START_PAGE+OFFSET} `);
+    loadDataToTable(STANDARD_QUERY + where + ORDER_BY + ` LIMIT ${LIMIT} OFFSET ${OFFSET}`);
 }
 
 /**
