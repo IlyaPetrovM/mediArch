@@ -1,6 +1,7 @@
 node_modules/*
 package-lock.json
 public_html/uploads/*
+public_html/style/imported/*
 public_html/tabulator/*
 config.js
 temp_audio/*

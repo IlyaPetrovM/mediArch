@@ -1,6 +1,6 @@
 {
   "name": "mediArch",
-  "version": "0.0.32 recognition",
+  "version": "0.0.33 informants and files",
   "description": "Программа для ведения архива медиафайлов",
   "main": "index.js",
   "scripts": {
