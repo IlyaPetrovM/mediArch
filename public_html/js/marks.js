@@ -1,6 +1,6 @@
 /**
 TODO при загрузке абсолютно нового видео - нужно создать самую первую запись на 00-00-00
-нужно показывать опись только для определённых типов файлов - только для видео и аудио
+
 
 */
 
@@ -58,16 +58,16 @@ const FORMAT_MARKS_COLUMNS = [
     },
         {
         field: 'recognition0',
-        formatter:(cell)=>{cell.getElement().style.whiteSpace = "pre-wrap"; return  textDiff(cell.getValue(), cell.getRow().getData().recognition1, cell.getRow().getData().recognition2);}
+        formatter:(cell)=>{cell.getElement().style.whiteSpace = "pre-wrap"; return cell.getValue() ? textDiff(cell.getValue(), cell.getRow().getData().recognition1, cell.getRow().getData().recognition2):null;}
     },
             {
         field: 'recognition1',
-        formatter: (cell)=>{cell.getElement().style.whiteSpace = "pre-wrap"; return textDiff(cell.getValue(), cell.getRow().getData().recognition0, cell.getRow().getData().recognition2);},
+        formatter: (cell)=>{cell.getElement().style.whiteSpace = "pre-wrap"; return cell.getValue() ? textDiff(cell.getValue(), cell.getRow().getData().recognition0, cell.getRow().getData().recognition2):null;},
 
     },
             {
         field: 'recognition2',
-        formatter: (cell)=>{cell.getElement().style.whiteSpace = "pre-wrap"; return textDiff(cell.getValue(), cell.getRow().getData().recognition0, cell.getRow().getData().recognition1); }
+        formatter: (cell)=>{cell.getElement().style.whiteSpace = "pre-wrap"; return cell.getValue() ? textDiff(cell.getValue(), cell.getRow().getData().recognition0, cell.getRow().getData().recognition1):null; }
     },
     {
         title:'',
