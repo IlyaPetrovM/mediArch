@@ -16,7 +16,7 @@ async function login(){
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            'username': inputUsername.value,
+            'username': inputUsername.value.trim(),
             'password': inputPassword.value
         })
     });
