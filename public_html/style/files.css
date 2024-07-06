@@ -1,8 +1,8 @@
 .previewImage{
-    height: 50px;
+    height: 100%;
 }
 
-.tags {
+/* .tags {
     padding: 0 10px;
     line-height: 25px;
     margin: 8px;
@@ -11,42 +11,18 @@
 }
 .tags:hover {
     background: rgba(0, 0, 0, 0.2);
+} */
+.tags {
+    display: inline-block;
+}
+.tags::after{
+    content: ";";
 }
 
 
-
-.tag-input-container {
-        border: 1px solid #ccc;
-        padding: 5px;
-        display: flex;
-        flex-wrap: wrap;
-        height: 50%;
-    }
-    .tag {
-        background-color: #e0e0e0;
-        padding: 5px;
-        margin: 2px;
-        border-radius: 3px;
-        display: flex;
-        align-items: center;
-    }
-    .tag .close {
-        margin-left: 5px;
-        cursor: pointer;
-    }
-    .dropdown {
-        display: none;
-        position: absolute;
-        border: 1px solid #ccc;
-        background-color: #fff;
-        max-height: 100px;
-        overflow-y: auto;
-        z-index: 1000;
-    }
-    .dropdown div {
-        padding: 5px;
-        cursor: pointer;
-    }
-    .dropdown div:hover {
-        background-color: #ddd;
-    }
+#fileTable{
+    /* max-width: 50vw; */
+}
+#viewer{
+    /* width: 50vw; */
+}

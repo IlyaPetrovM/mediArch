@@ -7,20 +7,9 @@ const UPLOAD_PATH = 'uploads/'; // must en with '/'
 const STANDARD_QUERY = `SELECT f.id as id,
                         '>>>' as play,
                         'Просмотр' as view,
-                        f.description description,
-                        f.recognizedText recognizedText,
-                        recognitionStatus,
-                        file_created_UTC,
-                        file_created_LOCAL,
-                        file_updated_LOCAL,
-                        date_upload_UTC,
-                        date_upload_timezone,
-                        date_upload_UTC,
-                        date_updated_timezone,
                         oldName, 
-                        f.name name,
-                        fileType,
-                        fileExt,
+                        f.tags as tags,
+                        f.description description,
                         CONCAT(
                             '[',
                                 GROUP_CONCAT( DISTINCT 
@@ -33,14 +22,29 @@ const STANDARD_QUERY = `SELECT f.id as id,
                                 ),
                             ']'
                             ) AS informants,
+                        f.recognizedText recognizedText,
+                        recognitionStatus,
+                        file_created_UTC,
+                        file_created_LOCAL,
+                        file_updated_LOCAL,
+                        date_upload_UTC,
+                        date_upload_timezone,
+                        date_upload_UTC,
+                        date_updated_timezone,
+                        f.name name,
+                        fileType,
+                        f.user_created as user_created,
                         'Скачать' as download,
-                        'Опись' as marks
+                        'Опись' as marks,
+                        fileExt,
+                        f.gps_str,
+                        f.deviceModel
                     FROM ((files as f
                             LEFT JOIN files_to_informants AS conn ON (conn.file_id = f.id) )
                             LEFT JOIN informants inf ON (conn.inf_id = inf.id)) GROUP BY f.id`;
 const ORDER_BY = ` ORDER BY id DESC `;
 let OFFSET = 0;
-let LIMIT = 10;
+let LIMIT = 30;
 let where = '';
 
 /**
@@ -59,14 +63,16 @@ const FORMAT_FILES_COLUMNS = [
     //id
     {
         field: 'id', 
-        width:40 ,
+        // width:40 ,
         hozAlign:  "center",
     },
     //description
     {
+        title:'Описание',
+        headerWordWrap:true,
         field: 'description',
         editor: 'textarea',
-        width: 400,
+        // width: 400,
         formatter:'textarea',
         editorParams: {
             autocomplete: "true",
@@ -82,17 +88,22 @@ const FORMAT_FILES_COLUMNS = [
     {
         field: 'name',
         visible: false,
+        headerWordWrap:true,
     },
     {
+        title:'Имя файла',
         field: 'oldName',
-        visible: false,
+        formatter:'textarea',
+        // visible: false,
+        headerWordWrap:true,
     },
     //recognizedText
     {
         field: 'recognizedText', 
         editor: 'textarea',
         visible: false,
-        width:200,
+        // width:200,
+        headerWordWrap:true,
         cellEdited: async function (cell){ 
             let res = await sql( `UPDATE files SET recognizedText='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
         },
@@ -110,7 +121,7 @@ const FORMAT_FILES_COLUMNS = [
     {
         title: "Тип",
         field: 'fileType',
-        visible: false,
+        // visible: false,
         editor: 'list',
         hozAlign: "center",
         editorParams: {
@@ -129,7 +140,7 @@ const FORMAT_FILES_COLUMNS = [
     { 
         field:'play',
         formatter: () => {return ICON_PLAY },
-        width:     20, 
+        // width:     20, 
         hozAlign:  "center",
         cellClick: function(e, cell){ playFile(e, cell.getRow().getData().name, true);} 
     },
@@ -142,14 +153,14 @@ const FORMAT_FILES_COLUMNS = [
             else 
                 return ''
         },
-        width:     20, 
+        // width:     20, 
         hozAlign:  "center"
     },
     //view
     {
         title: 'Просмотр',
         field: 'view',
-        width:     80,
+        // width:     80,
         hozAlign:  "center",
         formatter: function(cell) {return `<img alt=':(' src='${UPLOAD_PATH + cell.getRow().getData().name}' class='previewImage'>`; }
     },
@@ -158,16 +169,19 @@ const FORMAT_FILES_COLUMNS = [
         title: "Скачать",
         field: 'download',
         formatter:function(){return ICON_DOWNLOAD;}, 
-        width:     20, 
+        // width:     20, 
         hozAlign:  "center",  
+        headerWordWrap:true,
         cellClick: function(e, cell){ downloadFile(e, UPLOAD_PATH + cell.getRow().getData().name);} 
     },
     //date_created_GMT
     {
         title: "Дата съёмки",
         field: 'file_created_UTC',
-        visible: false,
-        width:     100,
+        // visible: false,
+        // width:     100,
+        headerFilter:"date",
+        headerWordWrap:true,
         formatter: (e) => {
             if(e.getValue() != undefined)
                 return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MMM hh:mm')
@@ -176,10 +190,11 @@ const FORMAT_FILES_COLUMNS = [
     },
     //date_upload
     {
-        title: "Дата загрузки",
+        title: "Дата загрузки (по Гринвичу)",
         field: 'date_upload_UTC',
-        visible: false,
-        width:     100,
+        // visible: false,
+        // width:     100,
+        headerWordWrap:true,
         formatter: (e) => {
             if(e.getValue() != undefined)
                 return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MMM hh:mm')
@@ -190,15 +205,17 @@ const FORMAT_FILES_COLUMNS = [
     {
         title: "Часовой пояс даты загрузки",
         field: 'date_upload_timezone',
-        visible: false,
-        width:     60,
+        // visible: false,
+        // width:     60,
+        headerWordWrap:true,
     },
     //date_updated
     {
         title: "Дата обновления",
         field: 'file_updated_LOCAL',
         visible: false,
-        width:     100,
+        // width:     100,
+        headerWordWrap:true,
         formatter: (e) => {
             if(e.getValue() != undefined)
                 return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MMM hh:mm')
@@ -210,27 +227,31 @@ const FORMAT_FILES_COLUMNS = [
         title: "Часовой пояс даты обновления",
         field: 'date_updated_timezone',
          visible: false,
-        width:     60,
+         headerWordWrap:true,
+        // width:     60,
     },
         //date_updated_timezone
      {
         title: "Часовой пояс даты обновления",
         field: 'file_created_LOCAL',
          visible: false,
-        width:     60,
+         headerWordWrap:true,
+        // width:     60,
     },
     //fileExt
     {
         title: "Расширение",
         field: 'fileExt',
-        visible: false,
-        width:     60,
+        // visible: false,
+        // width:     60,
+        headerWordWrap:true,
         hozAlign:  "center",
     },
     //informants
     {
         title: "Люди",
         field: 'informants',
+        // width: 120,
         cellClick: (e, cell)=>{editorInformants(cell)},
         mutator: (value, data, type, params, component)=>{
             console.log(value, type)
@@ -391,7 +412,7 @@ function formatInformantList(cell){
             const cross = document.createElement('span');
             cross.innerHTML = ' x '
             span.appendChild(content);
-            span.appendChild(cross);
+            // span.appendChild(cross);
 
             tags.appendChild(span)
         }
@@ -480,42 +501,73 @@ async function startRecognition(REC_ID, inputPath, cell) {
  */
 
 var table = new Tabulator("#fileTable", {
-    height:"800px",
-    layout: "fitColumns",
+    height:"calc(100vh - 58px)",
+    // maxWidth:"calc(300px)",
+    // responsiveLayout:'collapse',
+    // layout: "fitColumns",
+    
     placeholder: "Введите поисковую фразу",
     ajaxContentType: "json",
     autoColumns: true,
+    pagination:true,
+    paginationSize: 8,
+    rowHeight:100,
+    paginationSizeSelector: [5, 8, 15, 25, 100],
     // rowHeader:{formatter:"rownum", headerSort:true, hozAlign:"center", resizable:true, frozen:true},
     autoColumnsDefinitions: FORMAT_FILES_COLUMNS
 });
 table.on('tableBuilt', function(e){
-    loadDataToTable(STANDARD_QUERY  + where + ORDER_BY + ` LIMIT ${LIMIT} OFFSET ${OFFSET}`)
+    loadDataToTable(STANDARD_QUERY  + where + ORDER_BY  )
 });
 
-nextPage.addEventListener('click', (event)=>{
-    OFFSET += LIMIT;
-    if(OFFSET > 0) {
-        prevPage.hidden = false;
-    }
-     loadDataToTable(STANDARD_QUERY  + where + ORDER_BY + ` LIMIT ${LIMIT} OFFSET ${OFFSET}`);
-})
+// nextPage.addEventListener('click', (event)=>{
+//     OFFSET += LIMIT;
+//     if(OFFSET > 0) {
+//         prevPage.hidden = false;
+//     }
+//      loadDataToTable(STANDARD_QUERY  + where + ORDER_BY  );
+// })
 
-prevPage.addEventListener('click', (event)=>{
-    OFFSET -= LIMIT;
-    if(OFFSET <= 0) {
-        OFFSET = 0;
-        prevPage.hidden = true;
-    }
-     loadDataToTable(STANDARD_QUERY + where  + ORDER_BY + ` LIMIT ${LIMIT} OFFSET ${OFFSET}`);
-})
+// prevPage.addEventListener('click', (event)=>{
+//     OFFSET -= LIMIT;
+//     if(OFFSET <= 0) {
+//         OFFSET = 0;
+//         prevPage.hidden = true;
+//     }
+//      loadDataToTable(STANDARD_QUERY + where  + ORDER_BY  );
+// })
 
 
 table.on('dataLoaded', async function(data){
     if(!data) return;
     console.log(data);
+    table.redraw();
+    
+    // createColumnToggler(table, 'file_created_UTC', 'file_created_UTC');
+    // // document.getElementById('showColumnsMenu').onchange = function(e){
+    // //     console.log(e)
+    // //     // e.target.checked ? tab.showColumn(e.target.name) : tab.hideColumn(e.target.name)
+    // // };
     loadInformants(table, data);
 });
 
+// function createColumnToggler(tab, field, title){
+//     const select = document.createElement('showColumnsMenu');
+//     // const select = document.createElement('select');
+//     const option = document.createElement('option');
+//     option.value = field ;
+//     option.innerHTML = field;
+//     console.log(field);
+//     select.appendChild(option)
+//     // parent.appendChild(select);
+// }
+
+srch.addEventListener('input',(e)=>{
+    if(e.target.value === ''){
+        srch.blur();
+        startSearch();
+    }
+})
 
 /**
 * Поведение строки поиска
@@ -549,7 +601,7 @@ function startSearch() {
     }else{
         where = '';
     }
-    loadDataToTable(STANDARD_QUERY + where + ORDER_BY + ` LIMIT ${LIMIT} OFFSET ${OFFSET}`);
+    loadDataToTable(STANDARD_QUERY + where + ORDER_BY  );
 }
 
 /**

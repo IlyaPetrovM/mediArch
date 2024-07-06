@@ -35,26 +35,29 @@ TODO аутентификация!!!
                         <input id=srch class="form-control me-2" type="search" placeholder="Введите фразу" value=''>
                         <button class="btn btn-outline-success" onclick="startSearch()">Поиск</button>
                     </div>
-                    <button class="btn btn-success" id=prevPage> <- Пред. страница </button>
-                    <button class="btn btn-success" id=nextPage> След. страница -> </button>
                     <a class="navbar-brand">Архив экспедиции - Файлы</a>
                 </div>
             </nav>
         </div>
-
+        
         <div class='row'>
+            <section>
+                <!-- <button class="btn btn-success" id=prevPage> <- Пред. страница </button>
+                <button class="btn btn-success" id=nextPage> След. страница -> </button> -->
+            </section>
             <!-- ТАБЛИЦА   -->
-            <div class="col">
-                <div id="fileTable" class="embed-responsive embed-responsive-16by9"></div>
-            </div>
+            <!-- <div class="col"> -->
+                <!-- embed-responsive embed-responsive-16by9 -->
+                <div id="fileTable" class="col-md-8"></div>
+            <!-- </div> -->
 
             <!--     Просмотрщик       -->
-            <div class="col">
-                <div class="embed-responsive embed-responsive-16by9">
+            <div class="col-4">
+                <div class="" id="viewer">
                     <img hidden id=previewImg style="width:100%;" class="embed-responsive embed-responsive-16by9" />
                     <video hidden id=previewVideo style="width:100%;" class="embed-responsive embed-responsive-16by9"
                         controls></video>
-                    <iframe hidden id=previewIframe style="width:100%; height:100%;"
+                    <iframe hidden id=previewIframe style="width:100%; height:100vh;"
                         class="embed-responsive embed-responsive-16by9"></iframe>
                 </div>
             </div>
