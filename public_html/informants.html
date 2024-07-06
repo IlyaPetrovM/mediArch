@@ -7,11 +7,14 @@ TODO аутентификация!!!
 
 
     <link href="style/imported/google_material_icons.css" rel="stylesheet">
+    
     <link href="style/imported/bootstrap.min.css" rel="stylesheet" >
-    <link  href="style/imported/tabulator.min.css" rel="stylesheet">
+    <script src="js/imported/bootstrap.bundle.min.js" type="text/javascript"></script>
 
-    <script src="js/imported/luxon.min.js" type="text/javascript"></script>
+    <link  href="style/imported/tabulator.min.css" rel="stylesheet">
     <script src="js/imported/tabulator.min.js" type="text/javascript" ></script>
+    <script src="js/imported/luxon.min.js" type="text/javascript"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link  href="style/files.css" rel="stylesheet">
@@ -44,6 +47,34 @@ TODO аутентификация!!!
             <!-- ТАБЛИЦА   -->
             <div class="col">
                 <div id="informantsTable" ></div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal -->
+    <div class="modal fade" id="modalAddInformant" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="modalAddInformantLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-fullscreen-md-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modalAddInformantLabel">Выберите информантов</h1>
+                    <button id='btnCloseModal' type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть" id="closeModalButton"></button>
+                </div>
+                <div class="modal-body" id="modalAddInformantBody">
+                     <!-- Content -->
+                    <form class="form" id="formAddInformant" class="row">
+                        <input type="text" placeholder="Короткое имя (для базы)" name="nickname" class="form-control me-2"/> <br />
+                        <input type="text" placeholder="Имя" name="first_name" class="form-control" /> <br />
+                        <input type="text" placeholder="Отчество" name="middle_name" class="form-control" /> <br />
+                        <input type="text" placeholder="Фамилия" name="last_name" class="form-control" /> <br />
+                        <input type="text" placeholder="Фамилия при рождении" name="last_name_at_birth" class="form-control" /> <br />
+                        <input type="number" placeholder="Год рождения" min="1900" step="1" name="birthYear" class="form-control" /> <br />
+                        <textarea name="comments" placeholder="Заметки..." class="form-control" ></textarea> <br />
+                        <textarea name="contacts" placeholder="Контакты..." class="form-control" ></textarea> 
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button id="btnSaveModal" class="btn btn-success" data-bs-dismiss="modal">Сохранить</button>
+                </div>
             </div>
         </div>
     </div>

@@ -268,6 +268,7 @@ async function runInformants(){
             headerSort: false,
             resizable: false,
             frozen: true,
+            width: 20,
             headerHozAlign: "center",
             hozAlign: "center",
             formatter: "rowSelection",
@@ -292,13 +293,15 @@ async function runInformants(){
     table.on("dataProcessed", function(data){
         if(data.length>0) console.log(table.getColumn('hide').setHeaderFilterValue(false));
     });
+    
     USER = (await getUsername()).data;
 //    console.log(USER)
 
 
     /// Обработка событий
     document.getElementById('buttonAddInformant').addEventListener('click',function(){
-        addInformant(table, USER)
+        // addInformant(table, USER)
+        addInformantWithModal(table, USER);
     })
     document.getElementById('inputSearchInformant').addEventListener('keydown', function(e){
         if(e.code == 'Enter'){
@@ -342,12 +345,74 @@ async function addInformant(tab, user){
         return;
     }
     let row = tab.addRow({
-        id: res.data.insertId,
+        id: res.data.insertId, 
         user_created: user,
         birth:null
     });
     tab.deselectRow();
     tab.selectRow(res.data.insertId);
+}
+
+async function addInformantWithModal(tab, user){
+    const modal = new bootstrap.Modal(document.getElementById('modalAddInformant'));
+    
+    const formElem = document.getElementById('formAddInformant');
+    modal.toggle();
+    
+    document.getElementById('btnCloseModal').addEventListener('click', () => formElem.reset())
+    
+    document.getElementById('btnSaveModal').addEventListener('click', async (e) => {
+        
+        const form = new FormData(document.getElementById('formAddInformant'));
+        form.forEach((v,k) => console.log(v,k))
+        const res = await sql( `
+            INSERT INTO informants (
+                user_created, 
+                nickname, 
+                first_name, 
+                middle_name, 
+                last_name, 
+                last_name_at_birth,
+                birthYear,
+                comments,
+                contacts
+            ) VALUES (
+                 '${user}',
+                 '${form.get('nickname')}',
+                 '${form.get('first_name')}',
+                 '${form.get('middle_name')}',
+                 '${form.get('last_name')}',
+                 '${form.get('last_name_at_birth')}',
+                 ${form.get('birthYear') ? form.get('birthYear') : null},
+                 '${form.get('comments')}',
+                 '${form.get('contacts')}'
+            )
+        `)
+        if(res.errors){
+            alert('не удалось добавить информанта')
+            return;
+        }
+        let row = tab.addRow({
+            id: res.data.insertId, 
+            user_created: user,
+            first_name: form.get('nickname'), 
+            middle_name: form.get('middle_name'), 
+            last_name: form.get('last_name'), 
+            last_name_at_birth: form.get('last_name_at_birth'),
+            birthYear: form.get('birthYear'),
+            comments: form.get('comments'),
+            contacts: form.get('contacts')
+        }, 1);
+        
+        formElem.reset();
+        tab.deselectRow();
+        tab.selectRow(res.data.insertId);
+        console.log('Saved');
+    })
+    //open form
+    //on close form --> add inf
+
+
 }
 
 /**
