@@ -7,6 +7,7 @@ const UPLOAD_PATH = 'uploads/'; // must en with '/'
 const STANDARD_QUERY = `SELECT f.id as id,
                         '>>>' as play,
                         'Просмотр' as view,
+                        'Опись' as marks,
                         oldName, 
                         f.tags as tags,
                         f.description description,
@@ -35,7 +36,6 @@ const STANDARD_QUERY = `SELECT f.id as id,
                         fileType,
                         f.user_created as user_created,
                         'Скачать' as download,
-                        'Опись' as marks,
                         fileExt,
                         f.gps_str,
                         f.deviceModel
@@ -63,8 +63,25 @@ const FORMAT_FILES_COLUMNS = [
     //id
     {
         field: 'id', 
-        // width:40 ,
+        width:40 ,
         hozAlign:  "center",
+    },
+     //tags
+     {
+        title:'Теги',
+        field: 'tags',
+        editor: 'list',
+        width: 100,
+        editorParams: {
+            autocomplete: "true",
+            allowEmpty: true,
+            listOnEmpty: true,
+            values: ['портрет', 'архитектура', 'интервью', 'документ', 'природа', "животные"],
+            freetext: false
+        },
+        cellEdited: async function (cell) {
+            let res = await sql(`UPDATE files SET tags = '${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
+        },
     },
     //description
     {
@@ -72,7 +89,7 @@ const FORMAT_FILES_COLUMNS = [
         headerWordWrap:true,
         field: 'description',
         editor: 'textarea',
-        // width: 400,
+        width: 200,
         formatter:'textarea',
         editorParams: {
             autocomplete: "true",
@@ -90,6 +107,22 @@ const FORMAT_FILES_COLUMNS = [
         visible: false,
         headerWordWrap:true,
     },
+
+    // {
+    //     field: 'only_date',
+    //     // formatter: (cell) => {return 1;},
+    //     // visible: false,
+    //     // headerWordWrap:true,
+    //     headerFilter:"datetime",
+    //     mutator: (value, data, type, params, component) => {
+    //         if(value != undefined)
+    //             return new Date(
+    //                     new Date(value).getFullYear() ,
+    //                     new Date(value).getMonth(),
+    //                     new Date(value).getDay(), 0,0,0);
+    //         else return '';
+    //     }
+    // },
     {
         title:'Имя файла',
         field: 'oldName',
@@ -153,7 +186,7 @@ const FORMAT_FILES_COLUMNS = [
             else 
                 return ''
         },
-        // width:     20, 
+        width:     20, 
         hozAlign:  "center"
     },
     //view
@@ -179,8 +212,8 @@ const FORMAT_FILES_COLUMNS = [
         title: "Дата съёмки",
         field: 'file_created_UTC',
         // visible: false,
-        // width:     100,
-        headerFilter:"date",
+        width:     100,
+        // headerFilter:"date",
         headerWordWrap:true,
         formatter: (e) => {
             if(e.getValue() != undefined)
@@ -193,11 +226,12 @@ const FORMAT_FILES_COLUMNS = [
         title: "Дата загрузки (по Гринвичу)",
         field: 'date_upload_UTC',
         // visible: false,
-        // width:     100,
+        width:     100,
         headerWordWrap:true,
+        // headerFilter:'input',
         formatter: (e) => {
             if(e.getValue() != undefined)
-                return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MMM hh:mm')
+                return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MM hh:mm')
             else return '';
         }
     },
@@ -206,7 +240,7 @@ const FORMAT_FILES_COLUMNS = [
         title: "Часовой пояс даты загрузки",
         field: 'date_upload_timezone',
         // visible: false,
-        // width:     60,
+        width:     60,
         headerWordWrap:true,
     },
     //date_updated
@@ -214,7 +248,7 @@ const FORMAT_FILES_COLUMNS = [
         title: "Дата обновления",
         field: 'file_updated_LOCAL',
         visible: false,
-        // width:     100,
+        width:     100,
         headerWordWrap:true,
         formatter: (e) => {
             if(e.getValue() != undefined)
@@ -230,6 +264,15 @@ const FORMAT_FILES_COLUMNS = [
          headerWordWrap:true,
         // width:     60,
     },
+        //gps_str
+        {
+            title: "GPS",
+            field: 'gps_str',
+            formatter:'textarea',
+            //  visible: false,
+             headerWordWrap:true,
+            width:     80,
+        },
         //date_updated_timezone
      {
         title: "Часовой пояс даты обновления",
@@ -243,7 +286,7 @@ const FORMAT_FILES_COLUMNS = [
         title: "Расширение",
         field: 'fileExt',
         // visible: false,
-        // width:     60,
+        width:     60,
         headerWordWrap:true,
         hozAlign:  "center",
     },
@@ -597,7 +640,7 @@ function downloadFile(eventOnClick, path){
 function startSearch() {
 
     if (!(srch.value === undefined || srch.value === '')){
-        where = `  HAVING (description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
+        where = `  HAVING (tags like '%${srch.value}%' OR description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
     }else{
         where = '';
     }
