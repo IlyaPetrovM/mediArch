@@ -72,6 +72,7 @@ const FORMAT_FILES_COLUMNS = [
         field: 'tags',
         editor: 'list',
         width: 100,
+        hozAlign:  "center",
         editorParams: {
             autocomplete: "true",
             allowEmpty: true,
@@ -193,7 +194,7 @@ const FORMAT_FILES_COLUMNS = [
     {
         title: 'Просмотр',
         field: 'view',
-        // width:     80,
+        width:     80,
         hozAlign:  "center",
         formatter: function(cell) {return `<img alt=':(' src='${UPLOAD_PATH + cell.getRow().getData().name}' class='previewImage'>`; }
     },
@@ -202,7 +203,8 @@ const FORMAT_FILES_COLUMNS = [
         title: "Скачать",
         field: 'download',
         formatter:function(){return ICON_DOWNLOAD;}, 
-        // width:     20, 
+        width:     20, 
+        // verticalHeader:true,
         hozAlign:  "center",  
         headerWordWrap:true,
         cellClick: function(e, cell){ downloadFile(e, UPLOAD_PATH + cell.getRow().getData().name);} 
@@ -211,13 +213,15 @@ const FORMAT_FILES_COLUMNS = [
     {
         title: "Дата съёмки",
         field: 'file_created_UTC',
+        hozAlign:  "center",
+        width:     70,
         // visible: false,
-        width:     100,
         // headerFilter:"date",
         headerWordWrap:true,
         formatter: (e) => {
+            e.getElement().style.whiteSpace = "pre-wrap";
             if(e.getValue() != undefined)
-                return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MMM hh:mm')
+                return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MM hh:mm:ss')
             else return '';
         }
     },
@@ -226,12 +230,14 @@ const FORMAT_FILES_COLUMNS = [
         title: "Дата загрузки (по Гринвичу)",
         field: 'date_upload_UTC',
         // visible: false,
-        width:     100,
+        hozAlign:  "center",
+        width:     70,
         headerWordWrap:true,
         // headerFilter:'input',
         formatter: (e) => {
+            e.getElement().style.whiteSpace = "pre-wrap";
             if(e.getValue() != undefined)
-                return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MM hh:mm')
+                return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MM hh:mm:ss')
             else return '';
         }
     },
