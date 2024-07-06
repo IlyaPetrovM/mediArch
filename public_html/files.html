@@ -31,11 +31,16 @@ TODO аутентификация!!!
                         <a href='/files.html' class="nav-link active">Файлы</a>
                         <a href='/informants.html' class="nav-link">Информанты</a>
                     </nav>
+                    <button class="btn btn-outline-success" id='btnShowMyFiles'>Мои файлы</button>
                     <div class="d-flex">
                         <input id=srch class="form-control me-2" type="search" placeholder="Введите фразу" value=''>
-                        <button class="btn btn-outline-success" onclick="startSearch()">Поиск</button>
+                        <button class="btn btn-success" onclick="startSearch()">Поиск</button>
                     </div>
-                    <a class="navbar-brand">Архив экспедиции - Файлы</a>
+
+                    <div class="d-flex row">
+                        <div class="col" id='userName'>Пользователь</div>
+                        <button class="btn btn-secondary col" id="btnExit">Выйти</button>
+                    </div>
                 </div>
             </nav>
         </div>

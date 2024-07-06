@@ -17,3 +17,37 @@ async function sql(query, inserts) {
     }
 
 }
+
+/**
+ * @brief Определение какой пользователь авторизовался
+ * @return JSON с именем пользователя в формате {username: <имя> }
+ */
+async function getUsername(){
+    let user = ''
+    let res = await fetch('/api/session/username',{
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },body:''
+        })
+    if(res.ok){
+        return await res.json();
+    }
+}
+
+/**
+ * @brief Выйти
+ * @return JSON с именем пользователя в формате {username: <имя> }
+ */
+async function endSession(){
+    let user = ''
+    let res = await fetch('/api/session/end',{
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },body:''
+        })
+    if(res.ok){
+        return await res.json();
+    }
+}

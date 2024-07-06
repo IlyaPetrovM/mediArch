@@ -3,6 +3,18 @@
 ///
 const UPLOAD_PATH = 'uploads/'; // must en with '/'
 
+let USER = '';
+getUsername().then(res => {
+    USER = res.data
+    userName.innerHTML = USER;
+});
+
+btnExit.onclick = () => {
+    endSession().then(res => {
+        window.location.reload()
+    })
+}
+
 // Запрос к таблице
 const STANDARD_QUERY = `SELECT f.id as id,
                         '>>>' as play,
@@ -45,7 +57,7 @@ const STANDARD_QUERY = `SELECT f.id as id,
 const ORDER_BY = ` ORDER BY id DESC `;
 let OFFSET = 0;
 let LIMIT = 30;
-let where = '';
+let where = ' ';
 
 /**
  * Картинки для кнопок
@@ -107,6 +119,12 @@ const FORMAT_FILES_COLUMNS = [
         field: 'name',
         visible: false,
         headerWordWrap:true,
+    },
+    {
+        field: 'user_created',
+        // visible: false,
+        headerWordWrap:true,
+        headerFilter:'input',
     },
 
     // {
@@ -545,6 +563,8 @@ async function startRecognition(REC_ID, inputPath, cell) {
     });
 }
 
+
+
 /**
  * MAIN CODE -  начало основного кода
  */
@@ -569,28 +589,16 @@ table.on('tableBuilt', function(e){
     loadDataToTable(STANDARD_QUERY  + where + ORDER_BY  )
 });
 
-// nextPage.addEventListener('click', (event)=>{
-//     OFFSET += LIMIT;
-//     if(OFFSET > 0) {
-//         prevPage.hidden = false;
-//     }
-//      loadDataToTable(STANDARD_QUERY  + where + ORDER_BY  );
-// })
-
-// prevPage.addEventListener('click', (event)=>{
-//     OFFSET -= LIMIT;
-//     if(OFFSET <= 0) {
-//         OFFSET = 0;
-//         prevPage.hidden = true;
-//     }
-//      loadDataToTable(STANDARD_QUERY + where  + ORDER_BY  );
-// })
 
 
 table.on('dataLoaded', async function(data){
     if(!data) return;
     console.log(data);
     table.redraw();
+    
+    btnShowMyFiles.onclick = ()=>{
+        table.setHeaderFilterValue("user_created", USER);
+    }
     
     // createColumnToggler(table, 'file_created_UTC', 'file_created_UTC');
     // // document.getElementById('showColumnsMenu').onchange = function(e){
@@ -608,7 +616,7 @@ table.on('dataLoaded', async function(data){
 //     option.innerHTML = field;
 //     console.log(field);
 //     select.appendChild(option)
-//     // parent.appendChild(select);
+//     // parent.appendChild(select)
 // }
 
 srch.addEventListener('input',(e)=>{
@@ -646,7 +654,7 @@ function downloadFile(eventOnClick, path){
 function startSearch() {
 
     if (!(srch.value === undefined || srch.value === '')){
-        where = `  HAVING (tags like '%${srch.value}%' OR description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
+        where = ` HAVING (tags like '%${srch.value}%' OR description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
     }else{
         where = '';
     }

@@ -252,6 +252,16 @@ const FORMAT_INFORMANTS_COLUMNS = [
     }
 ];
 var USER = ''
+getUsername().then(res => {
+    USER = res.data
+    userName.innerHTML = USER;
+});
+
+btnExit.onclick = () => {
+    endSession().then(res => {
+        window.location.reload()
+    })
+}
 
 const QUERY_SELECT_FROM = `SELECT * FROM informants `;
 
@@ -294,7 +304,7 @@ async function runInformants(){
         if(data.length>0) console.log(table.getColumn('hide').setHeaderFilterValue(false));
     });
     
-    USER = (await getUsername()).data;
+    
 //    console.log(USER)
 
 
@@ -315,22 +325,7 @@ async function runInformants(){
 }
 runInformants();
 
-/**
- * @brief Определение какой пользователь авторизовался
- * @return JSON с именем пользователя в формате {username: <имя> }
- */
-async function getUsername(){
-    let user = ''
-    let res = await fetch('/api/session/username',{
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },body:''
-        })
-    if(res.ok){
-        return await res.json();
-    }
-}
+
 
 /**
  * @brief Добавление нового информанта в таблицу

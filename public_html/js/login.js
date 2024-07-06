@@ -10,17 +10,17 @@ document.getElementById('inputUsername').addEventListener('keydown', e => {
 
 async function login(){
 
- let response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            'username': inputUsername.value.trim(),
-            'password': inputPassword.value
-        })
-    });
-    if (response.ok) {
+    let response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                'username': inputUsername.value.trim(),
+                'password': inputPassword.value
+            })
+        });
+        if (response.ok) {
         let res = await response.json();
         console.log(res)
         if(res.errors){

@@ -80,6 +80,12 @@ app.post('/api/session/username', (req, res)=>{
     res.send({errors: null, data: req.session.user.username})
 })
 
+app.post('/api/session/end', (req, res)=>{
+    req.session.destroy();
+    // return res.redirect('/index.html');    
+    res.send( {errors: null, data: 'ok', message: 'OK'} );
+})
+
 
 
 
