@@ -239,7 +239,7 @@ const FORMAT_FILES_COLUMNS = [
         formatter: (e) => {
             e.getElement().style.whiteSpace = "pre-wrap";
             if(e.getValue() != undefined)
-                return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MM hh:mm:ss')
+                return luxon.DateTime.fromISO(e.getValue(), {setZone: false}).toFormat('dd.MM HH:mm:ss')
             else return '';
         }
     },
@@ -254,8 +254,12 @@ const FORMAT_FILES_COLUMNS = [
         // headerFilter:'input',
         formatter: (e) => {
             e.getElement().style.whiteSpace = "pre-wrap";
-            if(e.getValue() != undefined)
-                return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MM hh:mm:ss')
+            if(e.getValue() != undefined){
+                console.log('time', e.getData().id,  new Date(e.getValue()))
+                // const d = new Date(e.getValue());
+                // `${d.getDate()}.${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()}`
+                return luxon.DateTime.fromISO(e.getValue(), {setZone: false}).toFormat('dd.MM HH:mm:ss')
+            }
             else return '';
         }
     },
@@ -276,7 +280,7 @@ const FORMAT_FILES_COLUMNS = [
         headerWordWrap:true,
         formatter: (e) => {
             if(e.getValue() != undefined)
-                return luxon.DateTime.fromISO(e.getValue()).toFormat('dd.MMM hh:mm')
+                return luxon.DateTime.fromISO(e.getValue(), {setZone: false}).toFormat('dd.MM HH:mm')
             else return '';
         }
     },
