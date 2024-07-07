@@ -32,8 +32,13 @@
         </div>
 
         <div class='row'>
-            <div class='col'></div>
+            <div class='col'>
+                <time id="serverTime">00:00:00</time> сервер
+                <br>
+                <time id="browserTime">00:00:00</time> ваше время               
+            </div>
         <form class='col-md row g-3' method='POST' action='/api/upload' enctype='multipart/form-data' id='loaderForm'>
+            
             <input class='form-control' type="file" name="many_files" id='filesInput' multiple>
             <button id='uploadButton' class='btn  btn-primary'> Загрузить </button>
             <br>
@@ -41,7 +46,9 @@
             <br>
             <textarea  class='form-control' id='filesReadyList' rows=20 cols=80 readonly>Список загруженных файлов</textarea>
         </form>
-            <div class='col'></div>
+            <div class='col'>
+
+            </div>
         </div>
     </div>
 </body>

@@ -143,6 +143,11 @@ app.post('/api/sql', function(req, res) {
     conn.end();
 });
 
+app.get('/api/servertime', (req, res) => {
+    const serverTime = new Date().toLocaleTimeString();
+    console.log(new Date(), serverTime);
+    res.send(serverTime);
+});
 
 /** 
     Перенаправление запроса к базе данных возвращение только данных таблицы

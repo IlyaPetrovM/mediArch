@@ -354,3 +354,20 @@ async function getAVmetadata(file) {
 }
 //
 //filesInput.addEventListener('change', () => getAVmetadata(filesInput.files[0]))
+
+
+const serverTime = document.getElementById('serverTime')
+sql('SELECT curtime() as t').then(res => {
+    console.log(res.data);
+    serverTime.innerHTML = res.data[0].t;
+
+    const browserTime = document.getElementById('browserTime')
+    browserTime.innerHTML = new Date().toLocaleTimeString()
+    if (browserTime.innerHTML !== serverTime.innerHTML){
+        browserTime.style.color = 'red';
+    }else{
+        browserTime.style.color = 'green';
+        serverTime.style.color = 'green';
+    }
+})
+
