@@ -75,6 +75,7 @@ app.use((req, res, next) => {
 })
 
 app.use(express.static('public_html'))
+app.use('/uploads', express.static(config.UPLOAD_PATH));
 
 app.post('/api/session/username', (req, res)=>{
     res.send({errors: null, data: req.session.user.username})
@@ -112,12 +113,13 @@ app.post('/api/upload', async function(req, res) {
         else{
                 files.name = Buffer.from(files.name, 'latin1').toString('utf8');
                 let filePath = config.UPLOAD_PATH + transliterate(files.name);
+                console.log(filePath);
                 files.mv(filePath);
 //                let fctime = await getFileCreationTime(filePath)
 //                console.log('METADATA:', await fileMetadata('index.js'));
         }
         res.send( {errors: null, data: files.name, message: 'OK'} );
-        console.log('SESSION: ',req.session.user)
+        // console.log('SESSION: ',req.session.user)
         
     } catch (err) {
         console.log(err)
