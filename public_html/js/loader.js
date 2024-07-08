@@ -73,7 +73,7 @@ async function load() {
         
         print(`... заносим информацию в БД ...`)
         const sql_res = await sql('INSERT INTO ?? (??) VALUES ( ? ) ',
-            ['files', [ 'event_id', 'user_created','oldName', 'name', 'fileExt', 'filetype', 'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str', 'exif'],
+            ['files', [ 'event_id', 'user_created','oldName', 'name', 'fileExt', 'filetype', 'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str'],
                 [ selectEvents.value ? selectEvents.value : undefined,
                     USERNAME, 
                     files[i].name,
@@ -84,8 +84,8 @@ async function load() {
                  dateCreatedLOCAL,
                  dateUpdatedLOCAL,  // Может врать! В видео записыватся UTC, а в телефоне, например локальное время!
                  deviceModel,
-                 gps,
-                 exif_str]]);
+                 gps
+                 ]]);
 
         if (load_res.errors) print('!!! Ошибка загрузки файла')
         if (sql_res.errors) print('!!! Ошибка выполнения SQL-запроса')

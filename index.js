@@ -19,7 +19,11 @@ const app = express()
 
 // Папка public_html теперь обрабатывается как обычный статический сайт
 
-app.use(fileUpload({ createParentPath: true })) // enable files upload
+app.use(fileUpload({ 
+    createParentPath: true,
+    useTempFiles: true,
+    tempFileDir: "/tmp/"
+ })) // enable files upload
 app.use(express.json());
 
 // Инициализация express-session
