@@ -24,7 +24,7 @@
         <div class=row>
             <nav class="navbar navbar-expand-lg navbar-light bg-light">
                 <div class="container-fluid">
-
+                    
                     <nav class="nav nav-tabs">
                         <a href='/load.html' class="nav-link active">Загрузка</a>
                         <a href='/events.html' class="nav-link">События</a>
@@ -44,7 +44,13 @@
                 <time id="browserTime">00:00:00</time> ваше время               
             </div>
         <form class='col-md row g-3' method='POST' action='/api/upload' enctype='multipart/form-data' id='loaderForm'>
-            
+            <h4> 1. Выберите событие, к которому относятся файлы </h4>
+            <!-- <div class=""> -->
+                <select id="selectEvents" class='form-control ' ></select> 
+                <!-- Нет события?
+                <a href="/events.html" class="btn btn-secondary " id='buttonAddEvent'>Добавить событие</a> -->
+            <!-- </div> -->
+            <h4> 2. Выберите файлы </h4>
             <input class='form-control' type="file" name="many_files" id='filesInput' multiple>
             <button id='uploadButton' class='btn  btn-primary'> Загрузить </button>
             <br>

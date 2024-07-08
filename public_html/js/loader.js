@@ -70,11 +70,11 @@ async function load() {
         let gps = getGPSCoords(exif)
 
         let deviceModel = (exif.Make) ? (exif.Make + '_' + exif.Model) : null;
-
+        
         print(`... заносим информацию в БД ...`)
         const sql_res = await sql('INSERT INTO ?? (??) VALUES ( ? ) ',
-            ['files', [ 'user_created','oldName', 'name', 'fileExt', 'filetype', 'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str', 'exif'],
-                [
+            ['files', [ 'event_id', 'user_created','oldName', 'name', 'fileExt', 'filetype', 'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str', 'exif'],
+                [ selectEvents.value,
                     USERNAME, 
                     files[i].name,
                  transliterate(files[i].name),
@@ -371,3 +371,38 @@ sql('SELECT curtime() as t').then(res => {
     }
 })
 
+
+
+
+function addEventsToList(){
+    sql(`SELECT * FROM events ORDER BY date_start DESC, id DESC`).then(res => {
+        if(res.errors) return;
+        console.log(res.data)
+        const x = document.getElementById('selectEvents');
+        const option = document.createElement('option');
+        option.text = null;
+        option.label = '-- выберите событие --';
+        // option.label = 'Выберите событие';
+        option.disabled = true;
+        option.selected = true;
+        x.add(option)
+        
+        const nullOption = document.createElement('option');
+        nullOption.text = null;
+        nullOption.style.color ='red';
+        nullOption.label = '[ Не привязывать к событию ]';
+        x.add(nullOption)
+        res.data.forEach(evt => {
+            const option = document.createElement('option');
+            option.text = evt.id;
+            option.label = evt.title + ' --- ' + luxon.DateTime.fromISO(evt.date_start).toFormat('dd.MM.yyyy');
+            x.add(option)
+        });
+        x.onblur = (e)=>{
+            console.log(e.target.value);
+        }
+    })
+
+
+}
+addEventsToList();
