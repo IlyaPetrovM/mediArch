@@ -1,6 +1,6 @@
 {
   "name": "mediArch",
-  "version": "0.1.1",
+  "version": "0.1.2 second day",
   "description": "Программа для ведения архива медиафайлов",
   "main": "index.js",
   "scripts": {
