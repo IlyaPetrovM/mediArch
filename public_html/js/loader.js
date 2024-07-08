@@ -74,7 +74,7 @@ async function load() {
         print(`... заносим информацию в БД ...`)
         const sql_res = await sql('INSERT INTO ?? (??) VALUES ( ? ) ',
             ['files', [ 'event_id', 'user_created','oldName', 'name', 'fileExt', 'filetype', 'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str', 'exif'],
-                [ selectEvents.value,
+                [ selectEvents.value ? selectEvents.value : undefined,
                     USERNAME, 
                     files[i].name,
                  transliterate(files[i].name),
@@ -380,7 +380,7 @@ function addEventsToList(){
         console.log(res.data)
         const x = document.getElementById('selectEvents');
         const option = document.createElement('option');
-        option.text = null;
+        option.text = '';
         option.label = '-- выберите событие --';
         // option.label = 'Выберите событие';
         option.disabled = true;
@@ -388,7 +388,7 @@ function addEventsToList(){
         x.add(option)
         
         const nullOption = document.createElement('option');
-        nullOption.text = null;
+        nullOption.text = '';
         nullOption.style.color ='red';
         nullOption.label = '[ Не привязывать к событию ]';
         x.add(nullOption)

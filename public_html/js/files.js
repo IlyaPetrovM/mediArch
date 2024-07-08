@@ -3,6 +3,9 @@
 ///
 const UPLOAD_PATH = 'uploads/'; // must en with '/'
 
+const urlParams = new URLSearchParams(document.location.search)
+const EVENT_ID = urlParams.get('event_id');
+
 let USER = '';
 getUsername().then(res => {
     USER = res.data
@@ -143,6 +146,7 @@ const FORMAT_FILES_COLUMNS = [
   {
     field: 'event_id',
     visible: false,
+    headerFilter:'input'
   },
   {
     field: 'event_title',
@@ -680,6 +684,10 @@ table.on('dataLoaded', async function(data){
     btnShowMyFiles.onclick = ()=>{
         table.setHeaderFilterValue("user_created", USER);
     }
+
+    console.log('EVENT_ID', EVENT_ID)
+    if(EVENT_ID) table.setFilter('event_id','=', EVENT_ID );
+    
     
     // createColumnToggler(table, 'file_created_UTC', 'file_created_UTC');
     // // document.getElementById('showColumnsMenu').onchange = function(e){

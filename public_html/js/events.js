@@ -52,18 +52,19 @@
           }
         },
         formatter: function (cell) {
-          if (cell.getValue() !== null)
-            return luxon.DateTime.fromISO(cell.getValue()).toFormat(
-              'dd.MM.yyyy'
-            );
-          else return null;
-        },
+          if (cell.getValue() !== null) return luxon.DateTime.fromISO(cell.getValue()).toFormat('dd.MM.yyyy');
+          else return null;},
+      },
+      {
+        field:'view_files',
+        formatter:(cell)=>{ return `<a href='/files.html?event_id=${cell.getRow().getData().id}'> Смотреть файлы </a>` },
       },
     ],
   });
+
   table.on('tableBuilt', e =>{
     table.setData('api/sql/dataOnly',{
-      'query': `select id, title, date_start, time_start, 'x' as del  FROM events ORDER BY date_start DESC`,
+      'query': `select id, title, date_start, time_start, user_created, '>>>' as view_files , 'x' as del  FROM events ORDER BY date_start DESC`,
       'inserts': ''
     }, 'POST');
   });
