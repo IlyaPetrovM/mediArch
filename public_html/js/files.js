@@ -104,6 +104,7 @@ const FORMAT_FILES_COLUMNS = [
         editor: 'textarea',
         width: 200,
         formatter:'textarea',
+        headerFilter: 'input',
         editorParams: {
             autocomplete: "true",
             allowEmpty: true,
@@ -126,28 +127,13 @@ const FORMAT_FILES_COLUMNS = [
         headerWordWrap:true,
         headerFilter:'input',
     },
-
-    // {
-    //     field: 'only_date',
-    //     // formatter: (cell) => {return 1;},
-    //     // visible: false,
-    //     // headerWordWrap:true,
-    //     headerFilter:"datetime",
-    //     mutator: (value, data, type, params, component) => {
-    //         if(value != undefined)
-    //             return new Date(
-    //                     new Date(value).getFullYear() ,
-    //                     new Date(value).getMonth(),
-    //                     new Date(value).getDay(), 0,0,0);
-    //         else return '';
-    //     }
-    // },
     {
         title:'Имя файла',
         field: 'oldName',
         formatter:'textarea',
         // visible: false,
         headerWordWrap:true,
+        headerFilter: 'input'
     },
     //recognizedText
     {
@@ -229,7 +215,7 @@ const FORMAT_FILES_COLUMNS = [
     },
     //date_created_GMT
     {
-        title: "Дата съёмки",
+        title: "Дата съёмки (по Гринвичу)",
         field: 'file_created_UTC',
         hozAlign:  "center",
         width:     70,
@@ -275,12 +261,13 @@ const FORMAT_FILES_COLUMNS = [
     {
         title: "Дата обновления",
         field: 'file_updated_LOCAL',
-        visible: false,
-        width:     100,
+        // visible: false,
+        width:     70,
         headerWordWrap:true,
         formatter: (e) => {
+            e.getElement().style.whiteSpace = "pre-wrap";
             if(e.getValue() != undefined)
-                return luxon.DateTime.fromISO(e.getValue(), {setZone: false}).toFormat('dd.MM HH:mm')
+                return luxon.DateTime.fromISO(e.getValue(), {setZone: false}).toFormat('dd.MM HH:mm:ss')
             else return '';
         }
     },
@@ -322,6 +309,7 @@ const FORMAT_FILES_COLUMNS = [
     {
         title: "Люди",
         field: 'informants',
+        // headerFilter:'input',
         // width: 120,
         cellClick: (e, cell)=>{editorInformants(cell)},
         mutator: (value, data, type, params, component)=>{
@@ -335,6 +323,10 @@ const FORMAT_FILES_COLUMNS = [
         },
         formatter: formatInformantList
     }, 
+    {
+        field:'deviceModel',
+        headerFilter: 'input'
+    }
 ];
 
 
