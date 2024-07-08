@@ -7,12 +7,12 @@ loaderForm.addEventListener('submit', (e) => {
 })
 
 
-let USERNAME = null;
+let user_created = null;
 fetch('/api/session/username', {
     method:'POST', headers: { 'Content-Type': 'application/json'},
 }).then(res => res.json())
 .then(json => {
-    USERNAME = json.data;
+    user_created = json.data;
 })
 
 
@@ -55,7 +55,7 @@ async function load() {
     try {
 
       await loadOne(file);
-      const ID = await saveToBD(file.name, transliterate(file.name));
+      const ID = await saveToBD(file.name, transliterate(file.name), user_created);
 
     } catch (e) {
 
@@ -112,10 +112,12 @@ async function load() {
  * @param {String} name 
  * @returns ID загруженого файла в БД
  */
-async function saveToBD(oldName, name) {
+async function saveToBD(oldName, name, user_created) {
     console.log(`... заносим информацию в БД ...`);
-    const sql_res = await sql(`INSERT INTO files ( oldName,      name)  
-                                  VALUES ('${oldName}', '${name}' ) `);
+    const sql_res = await sql(
+        `INSERT INTO files ( oldName,      name,         user_created)  
+                  VALUES ('${oldName}', '${name}' ,   '${user_created}' ) `
+    );
     if (sql_res.errors) {
         print('!!! Ошибка выполнения SQL-запроса');
         throw new Error(sql_res.errors);
