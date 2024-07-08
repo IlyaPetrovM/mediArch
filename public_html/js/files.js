@@ -21,6 +21,8 @@ const STANDARD_QUERY = `SELECT f.id as id,
                         'Просмотр' as view,
                         'Опись' as marks,
                         oldName, 
+                        event_id,
+                        ev.title as event_title,
                         f.tags as tags,
                         f.description description,
                         CONCAT(
@@ -53,7 +55,8 @@ const STANDARD_QUERY = `SELECT f.id as id,
                         f.deviceModel
                     FROM ((files as f
                             LEFT JOIN files_to_informants AS conn ON (conn.file_id = f.id) )
-                            LEFT JOIN informants inf ON (conn.inf_id = inf.id)) GROUP BY f.id`;
+                            LEFT JOIN informants inf ON (conn.inf_id = inf.id)
+                            LEFT JOIN EVENTS ev ON (ev.id = f.event_id)) GROUP BY f.id`;
 const ORDER_BY = ` ORDER BY id DESC `;
 let OFFSET = 0;
 let LIMIT = 30;
@@ -72,261 +75,343 @@ const ICON_TEXT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16
  * Форматирование колонок таблицы
  */
 const FORMAT_FILES_COLUMNS = [
-    //id
-    {
-        field: 'id', 
-        width:40 ,
-        hozAlign:  "center",
+  //id
+  {
+    field: 'id',
+    width: 40,
+    hozAlign: 'center',
+  },
+  //tags
+  {
+    title: 'Теги',
+    field: 'tags',
+    editor: 'list',
+    width: 100,
+    hozAlign: 'center',
+    editorParams: {
+      autocomplete: 'true',
+      allowEmpty: true,
+      listOnEmpty: true,
+      values: [
+        'портрет',
+        'архитектура',
+        'интервью',
+        'документ',
+        'природа',
+        'животные',
+        'рабочие моменты',
+      ],
+      freetext: false,
     },
-     //tags
-     {
-        title:'Теги',
-        field: 'tags',
-        editor: 'list',
-        width: 100,
-        hozAlign:  "center",
-        editorParams: {
-            autocomplete: "true",
-            allowEmpty: true,
-            listOnEmpty: true,
-            values: ['портрет', 'архитектура', 'интервью', 'документ', 'природа', "животные"],
-            freetext: false
-        },
-        cellEdited: async function (cell) {
-            let res = await sql(`UPDATE files SET tags = '${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
-        },
+    cellEdited: async function (cell) {
+      let res = await sql(
+        `UPDATE files SET tags = '${cell.getValue()}' WHERE id=${
+          cell.getRow().getData().id
+        }`
+      );
     },
-    //description
-    {
-        title:'Описание',
-        headerWordWrap:true,
-        field: 'description',
-        editor: 'textarea',
-        width: 200,
-        formatter:'textarea',
-        headerFilter: 'input',
-        editorParams: {
-            autocomplete: "true",
-            allowEmpty: true,
-            listOnEmpty: true,
-            valuesLookup: true,
-            freetext: true
-        },
-        cellEdited: async function (cell) {
-            let res = await sql(`UPDATE files SET description='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
-        },
+  },
+  //description
+  {
+    title: 'Описание',
+    headerWordWrap: true,
+    field: 'description',
+    editor: 'textarea',
+    width: 200,
+    formatter: 'textarea',
+    headerFilter: 'input',
+    editorParams: {
+      autocomplete: 'true',
+      allowEmpty: true,
+      listOnEmpty: true,
+      valuesLookup: true,
+      freetext: true,
     },
-    {
-        field: 'name',
-        visible: false,
-        headerWordWrap:true,
+    cellEdited: async function (cell) {
+      let res = await sql(
+        `UPDATE files SET description='${cell.getValue()}' WHERE id=${
+          cell.getRow().getData().id
+        }`
+      );
     },
-    {
-        field: 'user_created',
-        // visible: false,
-        headerWordWrap:true,
-        headerFilter:'input',
+  },
+  {
+    field: 'name',
+    visible: false,
+    headerWordWrap: true,
+  },
+  {
+    field: 'event_id',
+    visible: false,
+  },
+  {
+    field: 'event_title',
+    title: 'Событие',
+    editor: 'list',
+    editorParams: {
+      clearable: true,
+      listOnEmpty: true,
+      autocomplete: true, //enable autocomplete mode,
+      freetext: false, //allow the user to set the value of the cell to a free text entry
+      valuesLookup: async function (cell, filterTerm) {
+        const res = await sql(`SELECT * FROM events ORDER BY date_start DESC, id DESC`);
+        const eventsList = [];
+        // })
+        // for (let i in res.data) {
+        res.data.forEach(evt => {
+          eventsList.push({
+            value: String(evt.id),
+            label: evt.title + ' --- ' + luxon.DateTime.fromISO(evt.date_start).toFormat('dd.MM.yyyy')
+          }); 
+        })
+        // console.log(eventsList);
+        return eventsList;
+      },
     },
-    {
-        title:'Имя файла',
-        field: 'oldName',
-        formatter:'textarea',
-        // visible: false,
-        headerWordWrap:true,
-        headerFilter: 'input'
+  },
+  {
+    field: 'user_created',
+    // visible: false,
+    headerWordWrap: true,
+    headerFilter: 'input',
+  },
+  {
+    title: 'Имя файла',
+    field: 'oldName',
+    formatter: 'textarea',
+    // visible: false,
+    headerWordWrap: true,
+    headerFilter: 'input',
+  },
+  //recognizedText
+  {
+    field: 'recognizedText',
+    editor: 'textarea',
+    visible: false,
+    // width:200,
+    headerWordWrap: true,
+    cellEdited: async function (cell) {
+      let res = await sql(
+        `UPDATE files SET recognizedText='${cell.getValue()}' WHERE id=${
+          cell.getRow().getData().id
+        }`
+      );
     },
-    //recognizedText
-    {
-        field: 'recognizedText', 
-        editor: 'textarea',
-        visible: false,
-        // width:200,
-        headerWordWrap:true,
-        cellEdited: async function (cell){ 
-            let res = await sql( `UPDATE files SET recognizedText='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
-        },
+  },
+  //'recognitionStatus'
+  {
+    // TODO добавить возможность "заказывать" распознавание и разрывать сессию
+    title: 'Распознавание',
+    field: 'recognitionStatus',
+    hozAlign: 'center',
+    visible: false,
+    cellClick: (e, cell) => {
+      startRecognition(
+        cell.getRow().getData().id,
+        UPLOAD_PATH + cell.getRow().getData().name,
+        cell
+      );
     },
-    //'recognitionStatus'
-    {
-        // TODO добавить возможность "заказывать" распознавание и разрывать сессию
-        title: "Распознавание",
-        field: 'recognitionStatus',
-        hozAlign:  "center",  
-        visible:false,
-        cellClick: (e, cell) => { startRecognition(cell.getRow().getData().id, UPLOAD_PATH + cell.getRow().getData().name, cell);}
+  },
+  //fileType
+  {
+    title: 'Тип',
+    field: 'fileType',
+    // visible: false,
+    editor: 'list',
+    hozAlign: 'center',
+    editorParams: {
+      autocomplete: 'true',
+      allowEmpty: true,
+      listOnEmpty: true,
+      valuesLookup: true,
+      freetext: false,
+      values: ['image', 'video', 'audio', 'text', 'other'],
     },
-    //fileType
-    {
-        title: "Тип",
-        field: 'fileType',
-        // visible: false,
-        editor: 'list',
-        hozAlign: "center",
-        editorParams: {
-            autocomplete: "true",
-            allowEmpty: true,
-            listOnEmpty: true,
-            valuesLookup: true,
-            freetext: false,
-            values: ['image', "video", "audio", "text", "other"]
-        },
-        cellEdited: async function (cell) {
-            let res = await sql(`UPDATE files SET fileType='${cell.getValue()}' WHERE id=${cell.getRow().getData().id}`);
-        },
+    cellEdited: async function (cell) {
+      let res = await sql(
+        `UPDATE files SET fileType='${cell.getValue()}' WHERE id=${
+          cell.getRow().getData().id
+        }`
+      );
     },
-    //play
-    { 
-        field:'play',
-        formatter: () => {return ICON_PLAY },
-        // width:     20, 
-        hozAlign:  "center",
-        cellClick: function(e, cell){ playFile(e, cell.getRow().getData().name, true);} 
+  },
+  //play
+  {
+    field: 'play',
+    formatter: () => {
+      return ICON_PLAY;
     },
-    //marks
-    {
-        field:'marks',
-        formatter: (cell) => {
-            if (cell.getRow().getData().fileType == 'audio' || cell.getRow().getData().fileType == 'video')
-                return `<a href='marks.html?file_id=${cell.getRow().getData().id}'>${ICON_TEXT}</a>`
-            else 
-                return ''
-        },
-        width:     20, 
-        hozAlign:  "center"
+    // width:     20,
+    hozAlign: 'center',
+    cellClick: function (e, cell) {
+      playFile(e, cell.getRow().getData().name, true);
     },
-    //view
-    {
-        title: 'Просмотр',
-        field: 'view',
-        width:     80,
-        hozAlign:  "center",
-        formatter: function(cell) {return `<img alt=':(' src='${UPLOAD_PATH + cell.getRow().getData().name}' class='previewImage'>`; }
+  },
+  //marks
+  {
+    field: 'marks',
+    formatter: (cell) => {
+      if (
+        cell.getRow().getData().fileType == 'audio' ||
+        cell.getRow().getData().fileType == 'video'
+      )
+        return `<a href='marks.html?file_id=${
+          cell.getRow().getData().id
+        }'>${ICON_TEXT}</a>`;
+      else return '';
     },
-    //download
-    {
-        title: "Скачать",
-        field: 'download',
-        formatter:function(){return ICON_DOWNLOAD;}, 
-        width:     20, 
-        // verticalHeader:true,
-        hozAlign:  "center",  
-        headerWordWrap:true,
-        cellClick: function(e, cell){ downloadFile(e, UPLOAD_PATH + cell.getRow().getData().name);} 
+    width: 20,
+    hozAlign: 'center',
+  },
+  //view
+  {
+    title: 'Просмотр',
+    field: 'view',
+    width: 80,
+    hozAlign: 'center',
+    formatter: function (cell) {
+      return `<img alt=':(' src='${
+        UPLOAD_PATH + cell.getRow().getData().name
+      }' class='previewImage'>`;
     },
-    //date_created_GMT
-    {
-        title: "Дата съёмки (по Гринвичу)",
-        field: 'file_created_UTC',
-        hozAlign:  "center",
-        width:     70,
-        // visible: false,
-        // headerFilter:"date",
-        headerWordWrap:true,
-        formatter: (e) => {
-            e.getElement().style.whiteSpace = "pre-wrap";
-            if(e.getValue() != undefined)
-                return luxon.DateTime.fromISO(e.getValue(), {setZone: false}).toFormat('dd.MM HH:mm:ss')
-            else return '';
-        }
+  },
+  //download
+  {
+    title: 'Скачать',
+    field: 'download',
+    formatter: function () {
+      return ICON_DOWNLOAD;
     },
-    //date_upload
-    {
-        title: "Дата загрузки (по Гринвичу)",
-        field: 'date_upload_UTC',
-        // visible: false,
-        hozAlign:  "center",
-        width:     70,
-        headerWordWrap:true,
-        // headerFilter:'input',
-        formatter: (e) => {
-            e.getElement().style.whiteSpace = "pre-wrap";
-            if(e.getValue() != undefined){
-                console.log('time', e.getData().id,  new Date(e.getValue()))
-                // const d = new Date(e.getValue());
-                // `${d.getDate()}.${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()}`
-                return luxon.DateTime.fromISO(e.getValue(), {setZone: false}).toFormat('dd.MM HH:mm:ss')
-            }
-            else return '';
-        }
+    width: 20,
+    // verticalHeader:true,
+    hozAlign: 'center',
+    headerWordWrap: true,
+    cellClick: function (e, cell) {
+      downloadFile(e, UPLOAD_PATH + cell.getRow().getData().name);
     },
-    //date_upload_timezone
-    {
-        title: "Часовой пояс даты загрузки",
-        field: 'date_upload_timezone',
-        // visible: false,
-        width:     60,
-        headerWordWrap:true,
+  },
+  //date_created_GMT
+  {
+    title: 'Дата съёмки (по Гринвичу)',
+    field: 'file_created_UTC',
+    hozAlign: 'center',
+    width: 70,
+    // visible: false,
+    // headerFilter:"date",
+    headerWordWrap: true,
+    formatter: (e) => {
+      e.getElement().style.whiteSpace = 'pre-wrap';
+      if (e.getValue() != undefined)
+        return luxon.DateTime.fromISO(e.getValue(), {
+          setZone: false,
+        }).toFormat('dd.MM HH:mm:ss');
+      else return '';
     },
-    //date_updated
-    {
-        title: "Дата обновления",
-        field: 'file_updated_LOCAL',
-        // visible: false,
-        width:     70,
-        headerWordWrap:true,
-        formatter: (e) => {
-            e.getElement().style.whiteSpace = "pre-wrap";
-            if(e.getValue() != undefined)
-                return luxon.DateTime.fromISO(e.getValue(), {setZone: false}).toFormat('dd.MM HH:mm:ss')
-            else return '';
-        }
+  },
+  //date_upload
+  {
+    title: 'Дата загрузки (по Гринвичу)',
+    field: 'date_upload_UTC',
+    // visible: false,
+    hozAlign: 'center',
+    width: 70,
+    headerWordWrap: true,
+    // headerFilter:'input',
+    formatter: (e) => {
+      e.getElement().style.whiteSpace = 'pre-wrap';
+      if (e.getValue() != undefined) {
+        console.log('time', e.getData().id, new Date(e.getValue()));
+        // const d = new Date(e.getValue());
+        // `${d.getDate()}.${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()}`
+        return luxon.DateTime.fromISO(e.getValue(), {
+          setZone: false,
+        }).toFormat('dd.MM HH:mm:ss');
+      } else return '';
     },
-    //date_updated_timezone
-     {
-        title: "Часовой пояс даты обновления",
-        field: 'date_updated_timezone',
-         visible: false,
-         headerWordWrap:true,
-        // width:     60,
+  },
+  //date_upload_timezone
+  {
+    title: 'Часовой пояс даты загрузки',
+    field: 'date_upload_timezone',
+    // visible: false,
+    width: 60,
+    headerWordWrap: true,
+  },
+  //date_updated
+  {
+    title: 'Дата обновления',
+    field: 'file_updated_LOCAL',
+    // visible: false,
+    width: 70,
+    headerWordWrap: true,
+    formatter: (e) => {
+      e.getElement().style.whiteSpace = 'pre-wrap';
+      if (e.getValue() != undefined)
+        return luxon.DateTime.fromISO(e.getValue(), {
+          setZone: false,
+        }).toFormat('dd.MM HH:mm:ss');
+      else return '';
     },
-        //gps_str
-        {
-            title: "GPS",
-            field: 'gps_str',
-            formatter:'textarea',
-            //  visible: false,
-             headerWordWrap:true,
-            width:     80,
-        },
-        //date_updated_timezone
-     {
-        title: "Часовой пояс даты обновления",
-        field: 'file_created_LOCAL',
-         visible: false,
-         headerWordWrap:true,
-        // width:     60,
+  },
+  //date_updated_timezone
+  {
+    title: 'Часовой пояс даты обновления',
+    field: 'date_updated_timezone',
+    visible: false,
+    headerWordWrap: true,
+    // width:     60,
+  },
+  //gps_str
+  {
+    title: 'GPS',
+    field: 'gps_str',
+    formatter: 'textarea',
+    //  visible: false,
+    headerWordWrap: true,
+    width: 80,
+  },
+  //date_updated_timezone
+  {
+    title: 'Часовой пояс даты обновления',
+    field: 'file_created_LOCAL',
+    visible: false,
+    headerWordWrap: true,
+    // width:     60,
+  },
+  //fileExt
+  {
+    title: 'Расширение',
+    field: 'fileExt',
+    // visible: false,
+    width: 60,
+    headerWordWrap: true,
+    hozAlign: 'center',
+  },
+  //informants
+  {
+    title: 'Люди',
+    field: 'informants',
+    // headerFilter:'input',
+    // width: 120,
+    cellClick: (e, cell) => {
+      editorInformants(cell);
     },
-    //fileExt
-    {
-        title: "Расширение",
-        field: 'fileExt',
-        // visible: false,
-        width:     60,
-        headerWordWrap:true,
-        hozAlign:  "center",
+    mutator: (value, data, type, params, component) => {
+      console.log(value, type);
+      if (type == 'data') {
+        const informants = JSON.parse(value);
+        if (informants.length == 1 && informants[0].id === null) return [];
+        return informants;
+      }
+      return value;
     },
-    //informants
-    {
-        title: "Люди",
-        field: 'informants',
-        // headerFilter:'input',
-        // width: 120,
-        cellClick: (e, cell)=>{editorInformants(cell)},
-        mutator: (value, data, type, params, component)=>{
-            console.log(value, type)
-            if(type == 'data'){
-                const informants = JSON.parse(value);
-                if (informants.length == 1 && informants[0].id === null) return [];
-                 return informants;
-            }
-            return value;
-        },
-        formatter: formatInformantList
-    }, 
-    {
-        field:'deviceModel',
-        headerFilter: 'input'
-    }
+    formatter: formatInformantList,
+  },
+  {
+    field: 'deviceModel',
+    headerFilter: 'input',
+  },
 ];
 
 
