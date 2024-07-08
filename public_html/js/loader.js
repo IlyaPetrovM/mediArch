@@ -47,55 +47,97 @@ function print(t) {
     https://stackforgeeks.com/blog/html5-read-video-metadata-of-mp4
 */
 async function load() {
-    let files = filesInput.files;
-    print('-- ЗАГРУЖАЕМ --')
+  let files = filesInput.files;
+  print('-- ЗАГРУЖАЕМ --');
 
-    for (let i = 0; i < files.length; i++) {
-        print(`... грузим на сервер ...`)
-        let load_res = await loadFileXhr(files[i], progressPrint); // с помощью await ждём загрузки каждого файла по отдельности
-        print(`... загружен на сервер ...`)
-        let fext = getUrlExtention(files[i].name)
-        let ftype = getFileType(fext)
-        print(`... читаем мета-информацию файла ...`)
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    try {
 
-        let exif = await getExif(files[i]);
-        let exif_str = JSON.stringify(exif);
+      await loadOne(file);
+      const ID = await saveToBD(file.name, transliterate(file.name));
 
-        const avmeta = await getAVmetadata(files[i]);
-        if (exif_str.length == 2) exif_str = JSON.stringify(avmeta)
+    } catch (e) {
 
+      console.error(e);
+      print(`ERR - ${file.name} - Ошибка загрузки файла`);
+      continue;
 
-        let  {dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL} = getDateCreation(files[i], exif, avmeta);
-        console.log({dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL});
-        let gps = getGPSCoords(exif)
-
-        let deviceModel = (exif.Make) ? (exif.Make + '_' + exif.Model) : null;
-        
-        print(`... заносим информацию в БД ...`)
-        const sql_res = await sql('INSERT INTO ?? (??) VALUES ( ? ) ',
-            ['files', [ 'event_id', 'user_created','oldName', 'name', 'fileExt', 'filetype', 'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str'],
-                [ selectEvents.value ? selectEvents.value : undefined,
-                    USERNAME, 
-                    files[i].name,
-                 transliterate(files[i].name),
-                 fext,
-                 ftype,
-                 dateCreatedUTC,
-                 dateCreatedLOCAL,
-                 dateUpdatedLOCAL,  // Может врать! В видео записыватся UTC, а в телефоне, например локальное время!
-                 deviceModel,
-                 gps
-                 ]]);
-
-        if (load_res.errors) print('!!! Ошибка загрузки файла')
-        if (sql_res.errors) print('!!! Ошибка выполнения SQL-запроса')
-
-        print(`id ${sql_res.data.insertId}. ${load_res.data}\tOK`);
     }
-    print(`-- ГОТОВО --`);
-
+}
+  print(`-- ГОТОВО --`);
 }
 
+
+
+            // const fext = getUrlExtention(file.name)
+            // const ftype = getFileType(fext)
+            // const event_id = selectEvents.value ? selectEvents.value : undefined;
+            // const user_created = USERNAME;
+
+            // print(`... читаем exif-информацию файла ...`)
+            // // let exif = undefined;
+            // let exif = await getExif(files[i]);
+            // let exif_str = JSON.stringify(exif);
+    
+            // // print(`... читаем мета-информацию видео ...`)
+            // const avmeta = undefined;
+            // // const avmeta = await getAVmetadata(files[i]);
+            // // if (exif_str.length == 2) exif_str = JSON.stringify(avmeta)
+            // let  {dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL} = getDateCreation(files[i], exif, avmeta);
+            // console.log({dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL});
+            // let gps = getGPSCoords(exif)
+            // let deviceModel = (exif.Make) ? (exif.Make + '_' + exif.Model) : null;
+    
+    
+    
+
+
+
+            // ['files', [ 'event_id', 'user_created', 'oldName', 'name', 'fileExt', 'filetype', 
+                
+            //             'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str'],
+            //     [ ,
+            //         USERNAME, 
+            //         files[i].name, transliterate(files[i].name), fext, ftype, dateCreatedUTC,
+            //      dateCreatedLOCAL,
+            //      dateUpdatedLOCAL,  // Может врать! В видео записыватся UTC, а в телефоне, например локальное время!
+            //      deviceModel,
+            //      gps
+            //      ]]);
+
+/**
+ * Сохраняет в БД самую необходимую инфу о загруженом файле
+ * @param {String} oldName 
+ * @param {String} name 
+ * @returns ID загруженого файла в БД
+ */
+async function saveToBD(oldName, name) {
+    console.log(`... заносим информацию в БД ...`);
+    const sql_res = await sql(`INSERT INTO files ( oldName,      name)  
+                                  VALUES ('${oldName}', '${name}' ) `);
+    if (sql_res.errors) {
+        print('!!! Ошибка выполнения SQL-запроса');
+        throw new Error(sql_res.errors);
+    }
+    const ID = sql_res.data.insertId;
+    print(`OK - ${oldName} - Сохранён в базе под id ${ID}`);
+    return ID ;
+}
+/**
+ * Загружает один файл на сервер постепенно
+ * @param {File} file 
+ * @returns 
+ */
+async function loadOne(file) {
+    console.log(`... грузим на сервер ...`);
+    const res = await loadFileXhr(file, progressPrint); // с помощью await ждём загрузки каждого файла по отдельности
+    if (res.errors) {
+        throw new Error();
+    }
+    console.log(`... загружен на сервер ...`);
+    return res;
+}
 
 /**
  * @brief Определяет дату создания файла по различным признакам
@@ -104,32 +146,38 @@ async function load() {
  * @param [in] JSON avmeta метаданные, получаемые в основном для аудио и видео
  * @return Возвращает дату в формате 2024-02-20 15:34:05 UTC
  */
-function getDateCreation( file, exif, avmeta) {
-     console.log([[exif.GPSDateStamp, exif.GPSTimeStamp ],
-        avmeta.media.track[0].Tagged_Date,
-        avmeta.media.track[0].Encoded_Date,
-        exif.DateTime,
-        exif.DateTimeOriginal,
-        file.lastModified        ]);
+function getDateCreation(file, exif, avmeta) {
+  let dateCreatedUTC;
+  let dateCreatedLOCAL;
+  let dateUpdatedLOCAL;
+  try {
+    dateCreatedUTC =
+      getGPSdate(exif) || // GPS-дата задаётся в часовом поясе  UTC
+      avmeta.media.track[0].Tagged_Date || // "2024-02-20 15:34:05 UTC" // UTC
+      avmeta.media.track[0].Encoded_Date; // "2024-02-20 15:34:05 UTC" // UTC
 
-    let dateCreatedUTC = getGPSdate(exif) ||     // GPS-дата задаётся в часовом поясе  UTC
-        avmeta.media.track[0].Tagged_Date ||     // "2024-02-20 15:34:05 UTC" // UTC
-        avmeta.media.track[0].Encoded_Date;     // "2024-02-20 15:34:05 UTC" // UTC
-
-    let dateCreatedLOCAL = exif.DateTime ||     // 2024:02:21 09:37:57       // local - фотоаппарата (но неизвестно как он был настроен)
-        exif.DateTimeOriginal;                // 2024:02:21 09:37:57       // local - фотоаппарата (но неизвестно как он был настроен)
-    if (dateCreatedUTC){
-        dateCreatedUTC = dateCreatedUTC.substr(0,dateCreatedUTC.length-3);
+    dateCreatedLOCAL =
+      exif.DateTime || // 2024:02:21 09:37:57       // local - фотоаппарата (но неизвестно как он был настроен)
+      exif.DateTimeOriginal; // 2024:02:21 09:37:57       // local - фотоаппарата (но неизвестно как он был настроен)
+    if (dateCreatedUTC) {
+      dateCreatedUTC = dateCreatedUTC.substr(0, dateCreatedUTC.length - 3);
     }
 
-    let dateUpdatedLOCAL;
-    if (file.lastModified){
-        dateUpdatedLOCAL = luxon.DateTime.fromMillis(file.lastModified).toFormat('yyyy-MM-dd hh:mm:ss');
-        console.log(dateUpdatedLOCAL);
+    if (file.lastModified) {
+      dateUpdatedLOCAL = luxon.DateTime.fromMillis(file.lastModified).toFormat(
+        'yyyy-MM-dd hh:mm:ss'
+      );
+      console.log(dateUpdatedLOCAL);
     }
-    return {dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL };
+    return { dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL };
+  } catch (e) {
+    console.error('getDateCreation:', e);
+    return { dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL };
+  }
 }
 function getGPSdate(exif){
+    try{
+    if(exif === undefined) return;
     if (exif.GPSDateStamp == undefined) {return undefined;}
     const dp = exif.GPSDateStamp.split(':');
     console.log([dp,Number.parseInt(dp[0]), // year
@@ -148,6 +196,10 @@ function getGPSdate(exif){
     console.log(gps);
     if(gps == 'Invalid DateTime') return undefined;
     return gps+ ' UTC';
+}catch(e){
+    console.error(e)
+    return undefined;
+}
 }
 
 /**
@@ -182,6 +234,7 @@ function getGPSCoords(exif){
         GPSLongitude
         GPSLongitudeRef
     */
+   if(!exif) return undefined;
     if (exif.GPSLatitude === undefined) return undefined;
     let gps = {
         lat: undefined,
@@ -201,12 +254,17 @@ function getGPSCoords(exif){
  * @return JSON с информацией EXIF
  */
 async function getExif(file) {
+  try {
     EXIF.enableXmp();
-    return new Promise(resolve => {
-        EXIF.getData(file, function() {
-            return resolve(EXIF.getAllTags(this));
-        })
-    })
+    return new Promise((resolve) => {
+      EXIF.getData(file, function () {
+        return resolve(EXIF.getAllTags(this));
+      });
+    });
+  } catch (e) {
+    console.error(e);
+    return undefined;
+  }
 }
 
 /**

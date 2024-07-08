@@ -22,9 +22,10 @@ const app = express()
 app.use(fileUpload({ 
     createParentPath: true,
     useTempFiles: true,
+    limits: { fileSize: 100 * 1024 * 1024 * 1024 },
     tempFileDir: "/tmp/"
  })) // enable files upload
-app.use(express.json());
+app.use(express.json({limit: '50mb'}));
 
 // Инициализация express-session
 app.use(session({
@@ -101,7 +102,9 @@ app.post('/api/session/end', (req, res)=>{
 app.post('/api/upload', async function(req, res) {
 
     try {
-         console.info('-----------file upload Start----------');
+         console.info('\n-----------file upload Start----------');
+         console.info( 'пользователь: ', req.session.username);
+         console.info('\n');
         if (!req.files) res.send('ERROR. No file uploaded');
         
         let files = req.files.many_files; // так как мы пишем <input name="many_files" 

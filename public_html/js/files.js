@@ -96,8 +96,9 @@ const FORMAT_FILES_COLUMNS = [
       allowEmpty: true,
       listOnEmpty: true,
       values: [
+          'архитектура',
+          'бэкстейдж',
         'портрет',
-        'архитектура',
         'интервью',
         'документ',
         'природа',
@@ -146,28 +147,45 @@ const FORMAT_FILES_COLUMNS = [
   {
     field: 'event_id',
     visible: false,
-    headerFilter:'input'
+    headerFilter: 'input',
   },
   {
     field: 'event_title',
     title: 'Событие',
     editor: 'list',
+    cellEdited: (cell) => {
+      console.log('event_title');
+      sql(
+        `UPDATE files SET event_id = ${cell.getValue()} WHERE id=${
+          cell.getRow().getData().id
+        }`
+      ).then((res) => {
+        res.errors
+          ? alert('Не могу добавть событие')
+          : console.log('событие ', cell.getValue());
+      });
+    },
     editorParams: {
       clearable: true,
       listOnEmpty: true,
       autocomplete: true, //enable autocomplete mode,
       freetext: false, //allow the user to set the value of the cell to a free text entry
       valuesLookup: async function (cell, filterTerm) {
-        const res = await sql(`SELECT * FROM events ORDER BY date_start DESC, id DESC`);
+        const res = await sql(
+          `SELECT * FROM events ORDER BY date_start DESC, id DESC`
+        );
         const eventsList = [];
         // })
         // for (let i in res.data) {
-        res.data.forEach(evt => {
+        res.data.forEach((evt) => {
           eventsList.push({
             value: String(evt.id),
-            label: evt.title + ' --- ' + luxon.DateTime.fromISO(evt.date_start).toFormat('dd.MM.yyyy')
-          }); 
-        })
+            label:
+              evt.title +
+              ' --- ' +
+              luxon.DateTime.fromISO(evt.date_start).toFormat('dd.MM.yyyy'),
+          });
+        });
         // console.log(eventsList);
         return eventsList;
       },

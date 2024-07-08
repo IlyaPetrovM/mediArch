@@ -31,15 +31,17 @@ const FORMAT_MARKS_COLUMNS = [
         title:'Время',
         field: 'start_time',
         hozAlign:  "center",
-        width:150,
+        width:100,
         visible: false
     },
-
+{field: 'tags',
+    visible:false
+},
     {
         title:'Время',
         field: 'time_msec',
         hozAlign:  "center",
-        width:128,
+        width:100,
         editor:timeEditor,
         formatter: function(cell){ return String(cell.getValue()/1000).toHHMMSS()},
         cellEdited: async function(cell){
@@ -48,9 +50,10 @@ const FORMAT_MARKS_COLUMNS = [
     },
     {
         field: 'describtion',
-        editor: 'textarea',
+        editor: 'input',
         formatter:'textarea',
         cellEdited: async function(cell){
+            cell.getElement().style.whiteSpace = "pre-wrap";
             let edit_result = await sql(
                 `UPDATE marks SET describtion = '${cell.getValue()}' WHERE id = ${cell.getRow().getData().id}`)
             if (edit_result.errors) {alert('Ошибка при сохранении описания метки в БД')}
@@ -58,15 +61,18 @@ const FORMAT_MARKS_COLUMNS = [
     },
         {
         field: 'recognition0',
+        visible:false,
         formatter:(cell)=>{cell.getElement().style.whiteSpace = "pre-wrap"; return cell.getValue() ? textDiff(cell.getValue(), cell.getRow().getData().recognition1, cell.getRow().getData().recognition2):null;}
     },
             {
         field: 'recognition1',
+        visible:false,
         formatter: (cell)=>{cell.getElement().style.whiteSpace = "pre-wrap"; return cell.getValue() ? textDiff(cell.getValue(), cell.getRow().getData().recognition0, cell.getRow().getData().recognition2):null;},
 
     },
             {
         field: 'recognition2',
+        visible:false,
         formatter: (cell)=>{cell.getElement().style.whiteSpace = "pre-wrap"; return cell.getValue() ? textDiff(cell.getValue(), cell.getRow().getData().recognition0, cell.getRow().getData().recognition1):null; }
     },
     {
