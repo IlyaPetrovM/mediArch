@@ -1,6 +1,6 @@
 {
   "name": "mediArch",
-  "version": "0.0.33 informants and files",
+  "version": "0.1.0 first day in Chusovoe",
   "description": "Программа для ведения архива медиафайлов",
   "main": "index.js",
   "scripts": {
