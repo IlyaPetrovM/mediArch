@@ -34,16 +34,23 @@ const FORMAT_MARKS_COLUMNS = [
         width:100,
         visible: false
     },
-{field: 'tags',
-    visible:false
-},
+    {
+        field: 'tags',
+        visible:false
+    },
     {
         title:'Время',
         field: 'time_msec',
         hozAlign:  "center",
         width:100,
-        editor:timeEditor,
+        // editor:timeEditor,
         formatter: function(cell){ return String(cell.getValue()/1000).toHHMMSS()},
+        cellClick:(e, cell)=>{
+            const player = document.getElementById('previewVideo');
+            console.log(player);
+            player.currentTime = cell.getValue()/1000;
+            
+        },
         cellEdited: async function(cell){
             console.log('Отредактировано. Новое значение:', cell.getValue())
         }
@@ -127,7 +134,7 @@ function textDiff(mainText, text2, text3) {
  */
 async function runMarks(){
     var table = new Tabulator("#marksTable", {
-        height:"100%",
+        height:"calc(100vh - 64px)",
         layout: "fitColumns",
         placeholder: "Введите поисковую фразу",
         ajaxContentType: "json",
