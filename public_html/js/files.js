@@ -19,17 +19,18 @@ btnExit.onclick = () => {
 }
 
 // Запрос к таблице
-const STANDARD_QUERY = `SELECT f.id as id,
+const STANDARD_QUERY = `SELECT 
                         '>>>' as play,
                         'Просмотр' as view,
                         'Опись' as marks,
                         oldName, 
-                        event_id,
-                        ev.title as event_title,
                         f.tags as tags,
                         f.description description,
+                        f.status,
+                        event_id,
+                        ev.title as event_title,
                         CONCAT(
-                            '[',
+                          '[',
                                 GROUP_CONCAT( DISTINCT 
                                     JSON_OBJECT( 
                                         "id",          inf.id, 
@@ -40,8 +41,9 @@ const STANDARD_QUERY = `SELECT f.id as id,
                                 ),
                             ']'
                             ) AS informants,
-                        f.recognizedText recognizedText,
-                        recognitionStatus,
+                            f.recognizedText recognizedText,
+                            recognitionStatus,
+                        f.id as id,
                         file_created_UTC,
                         file_created_LOCAL,
                         file_updated_LOCAL,
@@ -63,7 +65,7 @@ const STANDARD_QUERY = `SELECT f.id as id,
 const ORDER_BY = ` ORDER BY id DESC `;
 let OFFSET = 0;
 let LIMIT = 30;
-let where = ' ';
+let where = `  `;
 
 /**
  * Картинки для кнопок
@@ -115,6 +117,30 @@ const FORMAT_FILES_COLUMNS = [
       );
     },
   },
+  {
+    field:'status',
+    title:'Удаление',
+    editor:'list',
+    width:80,
+    cellEdited:(cell)=>{
+      console.log(cell.getValue())
+    },
+    editorParams: {
+      autocomplete: 'true',
+      allowEmpty: true,
+      listOnEmpty: true,
+      values: [
+          'на удаление',
+          'дубликат',
+          'битый файл',
+          'ок',
+      ],
+      freetext: false,
+    },
+    // formatter:(e)=>{
+
+    // }
+  },
   //description
   {
     title: 'Описание',
@@ -142,6 +168,7 @@ const FORMAT_FILES_COLUMNS = [
   {
     field: 'name',
     visible: false,
+    width:50,
     headerWordWrap: true,
   },
   {
@@ -174,7 +201,7 @@ const FORMAT_FILES_COLUMNS = [
         const res = await sql(
           `SELECT * FROM events ORDER BY date_start DESC, id DESC`
         );
-        const eventsList = [];
+        const eventsList = [{value:null, label: '[ Открепить файл от события ]'}];
         // })
         // for (let i in res.data) {
         res.data.forEach((evt) => {
@@ -200,8 +227,9 @@ const FORMAT_FILES_COLUMNS = [
   {
     title: 'Имя файла',
     field: 'oldName',
-    formatter: 'textarea',
+    formatter: 'input',
     // visible: false,
+    width:80,
     headerWordWrap: true,
     headerFilter: 'input',
   },
@@ -343,7 +371,7 @@ const FORMAT_FILES_COLUMNS = [
     formatter: (e) => {
       e.getElement().style.whiteSpace = 'pre-wrap';
       if (e.getValue() != undefined) {
-        console.log('time', e.getData().id, new Date(e.getValue()));
+        // console.log('time', e.getData().id, new Date(e.getValue()));
         // const d = new Date(e.getValue());
         // `${d.getDate()}.${d.getMonth()+1} ${d.getHours()}:${d.getMinutes()}`
         return luxon.DateTime.fromISO(e.getValue(), {
@@ -420,7 +448,7 @@ const FORMAT_FILES_COLUMNS = [
       editorInformants(cell);
     },
     mutator: (value, data, type, params, component) => {
-      console.log(value, type);
+      // console.log(value, type);
       if (type == 'data') {
         const informants = JSON.parse(value);
         if (informants.length == 1 && informants[0].id === null) return [];
@@ -567,7 +595,7 @@ function formatInformantList(cell){
 
     try{
         const informants = cell.getValue();
-        console.log(informants);
+        // console.log(informants);
 
         if(informants.length == 0 || informants.length == 1 && informants[0].id === null) return null;
         console.log(informants);
@@ -677,7 +705,20 @@ var table = new Tabulator("#fileTable", {
     // maxWidth:"calc(300px)",
     // responsiveLayout:'collapse',
     // layout: "fitColumns",
-    
+    selectableRows:1,
+    rowHeader: {
+        headerSort: false,
+        resizable: false,
+        frozen: true,
+        width: 5,
+        headerHozAlign: "center",
+        hozAlign: "center",
+        formatter: "rowSelection",
+        titleFormatter: "rowSelection",
+        // cellClick: function (e, cell) {
+        //     cell.getRow().toggleSelect();
+        // }
+    },
     placeholder: "Введите поисковую фразу",
     ajaxContentType: "json",
     autoColumns: true,
@@ -688,6 +729,34 @@ var table = new Tabulator("#fileTable", {
     // rowHeader:{formatter:"rownum", headerSort:true, hozAlign:"center", resizable:true, frozen:true},
     autoColumnsDefinitions: FORMAT_FILES_COLUMNS
 });
+table.setFilter('status', '!=', 'на удаление')
+table.on("rowSelected", function(row){
+  const btn = document.getElementById('btnDeleteFile');
+  btn.style.display = 'block';
+});
+table.on("rowDeselected", function(row){
+  const btn = document.getElementById('btnDeleteFile');
+  btn.style.display = 'none';
+});
+const btnDeleteFile = document.getElementById('btnDeleteFile');
+btnDeleteFile.onclick = ()=>{
+  const ans = confirm('Вы уверены?');
+  if(ans == false) return;
+
+  const selectedData  = table.getSelectedData()[0];
+  console.log(selectedData);
+  table.updateData( [ { id:selectedData.id, status:'на удаление' } ] );
+  table.deleteRow(selectedData.id);
+  const status = 'на удаление';
+  sql(`UPDATE files SET status = '${status}' WHERE id = ${selectedData.id} `)
+  .then(res => {
+    if(res.errors){
+      alert('Ошибка при удалении из SQL базы')
+      console.error(res.errors);
+    }
+  })
+}
+
 table.on('tableBuilt', function(e){
     loadDataToTable(STANDARD_QUERY  + where + ORDER_BY  )
 });
@@ -696,7 +765,7 @@ table.on('tableBuilt', function(e){
 
 table.on('dataLoaded', async function(data){
     if(!data) return;
-    console.log(data);
+    // console.log(data);
     table.redraw();
     
     btnShowMyFiles.onclick = ()=>{
@@ -763,7 +832,7 @@ function startSearch() {
     if (!(srch.value === undefined || srch.value === '')){
         where = ` HAVING (tags like '%${srch.value}%' OR description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
     }else{
-        where = '';
+        where = ` `;
     }
     loadDataToTable(STANDARD_QUERY + where + ORDER_BY  );
 }
