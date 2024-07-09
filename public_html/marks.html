@@ -27,11 +27,13 @@
                 <a href='/load.html' class="nav-link">Загрузка</a>
                 <a href='/events.html' class="nav-link">События</a>
                 <a href='/files.html' class="nav-link">Файлы</a>
+                <a href='/marks.html' class="nav-link active">Метки</a>
                 <a href='/informants.html' class="nav-link">Информанты</a>
               </nav>
 
               <button id='btnAddRow' class="btn btn-success">Добавить метку</button>
-              <a class="navbar-brand">Архив экспедиции - Опись</a>
+              <h4 id=timeMonitor>  00:00:00.000 </h4>
+              <a class="navbar-brand" id='fileNameLogo'>Архив экспедиции - Опись</a>
             </div>
           </nav>
        </div>
@@ -40,7 +42,6 @@
                 Просмотрщик       
             -------------------------->
             <div class="col-sm-6 order-sm-last">
-                <div id=timeMonitor>  </div>
                <img hidden id=previewImg style="width:100%;" class="embed-responsive embed-responsive-16by9" />
                <video hidden id=previewVideo style="width:100%;" class="embed-responsive embed-responsive-16by9" controls></video>
                <iframe hidden id=previewIframe style="width:100%; height:100%;" class="embed-responsive embed-responsive-16by9" ></iframe>

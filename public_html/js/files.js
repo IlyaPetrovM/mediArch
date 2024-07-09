@@ -870,6 +870,7 @@ function getUrlExtention( url ) {
 function playFile(event, name, useProxy=false){
    let path = getFilePath(name, useProxy);
    let ext = getUrlExtention(path);
+   console.log(path)
     
    previewImg.hidden = previewVideo.hidden = previewIframe.hidden = true;
    switch(ext){

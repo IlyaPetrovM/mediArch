@@ -6,18 +6,22 @@ TODO при загрузке абсолютно нового видео - нуж
 
 const urlParams = new URLSearchParams(document.location.search)
 const FILE_ID = urlParams.get('file_id');
-const QUERY_MARKS = `SELECT  id,  
+const QUERY_MARKS = `SELECT  m.id,  
                             start_time, 
                             time_msec,
-                            tags, 
+                            m.tags, 
                             describtion,
                             recognition0,
                             recognition1,
                             recognition2,
-                            hide
-                        FROM marks
-                        WHERE 
-                        file_id = ${FILE_ID} and hide <> 1 ORDER BY time_msec ASC`;
+                            hide,
+                            file_id
+                        FROM marks m `;
+let where = ` WHERE file_id = ${FILE_ID} and hide <> 1 ORDER BY time_msec ASC`;
+if(!FILE_ID) {
+    where = 'WHERE  hide <> 1 ORDER BY file_id ASC, time_msec ASC'
+    btnAddRow.disabled = true;
+}
 
 
 const FORMAT_MARKS_COLUMNS = [   
@@ -44,11 +48,20 @@ const FORMAT_MARKS_COLUMNS = [
         hozAlign:  "center",
         width:100,
         // editor:timeEditor,
-        formatter: function(cell){ return String(cell.getValue()/1000).toHHMMSS()},
-        cellClick:(e, cell)=>{
+        formatter: function(cell){ return '<u style="color:blue">' + String(cell.getValue()/1000).toHHMMSS() + '</u>'},
+        cellClick:async (e, cell)=>{
             const player = document.getElementById('previewVideo');
-            console.log(player);
+            // console.log(player);
+            console.log(player.currentTime);
+            const file_id = cell.getRow().getData().file_id;
+            const fileName = await getFileName(file_id);
+            console.log(fileName);
+            if(player.src != UPLOAD_PATH + fileName){
+                fileNameLogo.innerHTML = file_id + ' -- ' + fileName;
+                playFile(null, fileName, true);
+            }
             player.currentTime = cell.getValue()/1000;
+            timeMonitor.innerHTML = toHHMMSSsss( player.currentTime * 1000 );
             
         },
         cellEdited: async function(cell){
@@ -59,6 +72,7 @@ const FORMAT_MARKS_COLUMNS = [
         field: 'describtion',
         editor: 'input',
         formatter:'textarea',
+        headerFilter:'input',
         cellEdited: async function(cell){
             cell.getElement().style.whiteSpace = "pre-wrap";
             let edit_result = await sql(
@@ -96,6 +110,10 @@ const FORMAT_MARKS_COLUMNS = [
             if (edit_result.errors) {alert('Ошибка при сохранении описания метки в БД')}
             cell.getRow().delete()
         }
+    },
+    {
+        field: 'file_id',
+        visible:false
     }
 ]
 
@@ -149,7 +167,7 @@ async function runMarks(){
       table.setData(
         'api/sql/dataOnly',
         {
-          query: QUERY_MARKS,
+          query: QUERY_MARKS + where,
           inserts: '',
         },
         'POST'
@@ -163,7 +181,7 @@ async function runMarks(){
         table.setData(
           'api/sql/dataOnly',
           {
-            query: QUERY_MARKS,
+            query: QUERY_MARKS + where,
             inserts: '',
           },
           'POST'
@@ -173,13 +191,13 @@ async function runMarks(){
     
     btnAddRow.onclick = function(){ addMark(table, FILE_ID);};
     
-    let fileName = await getFileName(FILE_ID);
-    playFile(null, fileName, true);
-    
     previewVideo.ontimeupdate = function(e){ 
         timeMonitor.innerHTML = toHHMMSSsss(previewVideo.currentTime*1000);
-        goToMark(Number.parseInt(previewVideo.currentTime*1000), table);
+        if(FILE_ID) goToMark(Number.parseInt(previewVideo.currentTime*1000), table);
     }
+
+    let fileName = await getFileName(FILE_ID);
+    if(fileName)playFile(null, fileName, true);
 }
 runMarks();
 
@@ -252,6 +270,7 @@ function toHHMMSSsss(millis) {
 * @brief Получаем название файла по его id
 */
 async function getFileName(file_id){
+    if(!file_id) return '';
     // TODO загружать имя файла по file_id
     const query = `SELECT name FROM files WHERE id = ${file_id} LIMIT 1`;
     let res = await sql(query);
