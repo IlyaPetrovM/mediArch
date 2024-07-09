@@ -54,8 +54,8 @@ async function load() {
     const file = files[i];
     try {
 
-      await loadOne(file);
-      const ID = await saveToBD(file.name, transliterate(file.name), user_created);
+        const ID = await saveToBD(file.name, transliterate(file.name), user_created);
+        await loadOne(file);
 
     } catch (e) {
 
@@ -88,14 +88,7 @@ async function load() {
             // console.log({dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL});
             // let gps = getGPSCoords(exif)
             // let deviceModel = (exif.Make) ? (exif.Make + '_' + exif.Model) : null;
-    
-    
-    
 
-
-
-            // ['files', [ 'event_id', 'user_created', 'oldName', 'name', 'fileExt', 'filetype', 
-                
             //             'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str'],
             //     [ ,
             //         USERNAME, 
@@ -114,16 +107,17 @@ async function load() {
  */
 async function saveToBD(oldName, name, user_created) {
     console.log(`... заносим информацию в БД ...`);
-    const event_id = selectEvents.value ? selectEvents.value : undefined;
-    const fileExt = getUrlExtention(file.name)
-    const filetype = getFileType(fext)
+    const selectEvents = document.getElementById('selectEvents');
+    const event_id = selectEvents.value ? selectEvents.value : 'NULL';
+    const fileExt = getUrlExtention(oldName)
+    const filetype = getFileType(fileExt)
     const sql_res = await sql(
         `INSERT INTO files ( oldName,      name,         user_created, event_id, fileExt, filetype )  
                   VALUES ('${oldName}', '${name}' ,   '${user_created}' , ${event_id}, '${fileExt}', '${filetype}') `
     );
     if (sql_res.errors) {
         print('!!! Ошибка выполнения SQL-запроса');
-        throw new Error(sql_res.errors);
+        throw new Error(JSON.stringify(sql_res.errors));
     }
     const ID = sql_res.data.insertId;
     print(`OK - ${oldName} - Сохранён в базе под id ${ID}`);
@@ -140,7 +134,7 @@ async function loadOne(file) {
     if (res.errors) {
         throw new Error();
     }
-    console.log(`... загружен на сервер ...`);
+    console.log(`OK - ${file.name} - загружен на сервер ...`);
     return res;
 }
 
