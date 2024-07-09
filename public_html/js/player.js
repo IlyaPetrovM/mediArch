@@ -1,6 +1,7 @@
 // player.js
 
 const UPLOAD_PATH = 'uploads/'; // must en with '/'
+const PREVIEW_PATH = 'uploads/preview/'; // must en with '/'
 /**
 *
 */

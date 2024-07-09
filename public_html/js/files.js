@@ -43,21 +43,21 @@ const STANDARD_QUERY = `SELECT
                             ) AS informants,
                             f.recognizedText recognizedText,
                             recognitionStatus,
-                        f.id as id,
-                        file_created_UTC,
-                        file_created_LOCAL,
-                        file_updated_LOCAL,
-                        date_upload_UTC,
-                        date_upload_timezone,
-                        date_upload_UTC,
-                        date_updated_timezone,
-                        f.name name,
-                        fileType,
-                        f.user_created as user_created,
-                        'Скачать' as download,
-                        fileExt,
-                        f.gps_str,
-                        f.deviceModel
+                            file_created_UTC,
+                            file_created_LOCAL,
+                            file_updated_LOCAL,
+                            date_upload_UTC,
+                            date_upload_timezone,
+                            date_upload_UTC,
+                            date_updated_timezone,
+                            f.name name,
+                            fileType,
+                            f.user_created as user_created,
+                            'Скачать' as download,
+                            fileExt,
+                            f.gps_str,
+                            f.deviceModel,
+                            f.id as id
                     FROM ((files as f
                             LEFT JOIN files_to_informants AS conn ON (conn.file_id = f.id) )
                             LEFT JOIN informants inf ON (conn.inf_id = inf.id)
@@ -121,6 +121,7 @@ const FORMAT_FILES_COLUMNS = [
     field:'status',
     title:'Удаление',
     editor:'list',
+    visible:false,
     width:80,
     cellEdited:(cell)=>{
       console.log(cell.getValue())
@@ -322,7 +323,7 @@ const FORMAT_FILES_COLUMNS = [
     hozAlign: 'center',
     formatter: function (cell) {
       return `<img alt=':(' src='${
-        UPLOAD_PATH + cell.getRow().getData().name
+        UPLOAD_PATH  +  cell.getRow().getData().name
       }' class='previewImage'>`;
     },
   },
