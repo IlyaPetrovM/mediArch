@@ -48,7 +48,7 @@ const FORMAT_MARKS_COLUMNS = [
         hozAlign:  "center",
         width:100,
         // editor:timeEditor,
-        formatter: function(cell){ return '<u style="color:blue">' + String(cell.getValue()/1000).toHHMMSS() + '</u>'},
+        formatter: function(cell){ return '<code class="link-secondary link-offset-2" style="color:#0d6efd; text-decoration: underline;">' + String(cell.getValue()/1000).toHHMMSS() + '</code>'},
         cellClick:async (e, cell)=>{
             const player = document.getElementById('previewVideo');
             // console.log(player);

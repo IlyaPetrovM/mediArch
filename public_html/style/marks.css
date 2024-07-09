@@ -9,3 +9,8 @@
 .diffWord::after {
     content:''
 }
+
+#timeMonitor{
+    border: 1px rgb(207, 207, 207) solid;
+    padding: 0 5px;
+}
