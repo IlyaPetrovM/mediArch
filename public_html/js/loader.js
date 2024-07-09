@@ -114,9 +114,12 @@ async function load() {
  */
 async function saveToBD(oldName, name, user_created) {
     console.log(`... заносим информацию в БД ...`);
+    const event_id = selectEvents.value ? selectEvents.value : undefined;
+    const fileExt = getUrlExtention(file.name)
+    const filetype = getFileType(fext)
     const sql_res = await sql(
-        `INSERT INTO files ( oldName,      name,         user_created)  
-                  VALUES ('${oldName}', '${name}' ,   '${user_created}' ) `
+        `INSERT INTO files ( oldName,      name,         user_created, event_id, fileExt, filetype )  
+                  VALUES ('${oldName}', '${name}' ,   '${user_created}' , ${event_id}, '${fileExt}', '${filetype}') `
     );
     if (sql_res.errors) {
         print('!!! Ошибка выполнения SQL-запроса');
