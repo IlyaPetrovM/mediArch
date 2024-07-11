@@ -57,6 +57,15 @@ async function load() {
         const ID = await saveToBD(file.name, transliterate(file.name), user_created);
         await loadOne(file);
 
+        let exif = await getExif(file);
+        let gps = getGPSCoords(exif)
+        // let deviceModel = (exif.Make) ? (exif.Make + '_' + exif.Model) : null;
+
+        const res = await sql(`UPDATE files SET gps_str = '${gps}' WHERE id = ${ID}`);
+        if(res.errors) {
+            throw new Error(JSON.stringify(res.errors));
+        }
+
     } catch (e) {
 
       console.error(e);
@@ -77,7 +86,6 @@ async function load() {
 
             // print(`... читаем exif-информацию файла ...`)
             // // let exif = undefined;
-            // let exif = await getExif(files[i]);
             // let exif_str = JSON.stringify(exif);
     
             // // print(`... читаем мета-информацию видео ...`)
@@ -86,8 +94,6 @@ async function load() {
             // // if (exif_str.length == 2) exif_str = JSON.stringify(avmeta)
             // let  {dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL} = getDateCreation(files[i], exif, avmeta);
             // console.log({dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL});
-            // let gps = getGPSCoords(exif)
-            // let deviceModel = (exif.Make) ? (exif.Make + '_' + exif.Model) : null;
 
             //             'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str'],
             //     [ ,

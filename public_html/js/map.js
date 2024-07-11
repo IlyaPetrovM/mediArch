@@ -480,7 +480,6 @@ function initMap(map, tableData){
   map.fitBounds(group.getBounds());
 
   function convertGPS(elem) {
-    console.log(elem)
     if (!elem.gps_str) return undefined;
     const coords = elem.gps_str.split(',').map(parseFloat);
     if (isNaN(coords[0])) return undefined;
@@ -495,7 +494,7 @@ function initMap(map, tableData){
  * @param {Array} coords 
  * @param {Leaflet Marker Cluster} markerCluster 
  */
-function addPointToMap(map, coords, markerCluster, text) {
+function addPointToMap(map, coords, markerCluster, text, table, id) {
   const marker = L.marker(coords, { draggable: true }).addTo(map);
   marker.bindPopup(text)
 
@@ -503,6 +502,7 @@ function addPointToMap(map, coords, markerCluster, text) {
 
   marker.on('click' , event =>{
     console.log(event);
+    
   })
 
   marker.on('dragend', function (event) {
