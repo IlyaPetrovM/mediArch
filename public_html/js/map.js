@@ -6,7 +6,7 @@
 const UPLOAD_PATH = 'uploads/'; // must en with '/'
 const urlParams = new URLSearchParams(document.location.search)
 const EVENT_ID = urlParams.get('event_id');
-let map = L.map('map').setView([50.0, 30.0], 13);
+let map = L.map('map').setView([57.340, 59.246], 13);
 
 let USER = '';
 getUsername().then(res => {
@@ -171,6 +171,7 @@ const FORMAT_FILES_COLUMNS = [
     editor: 'list',
     formatter:'textarea',
     width:200,
+    headerFilter: 'input',
     cellEdited: (cell) => {
       console.log('event_title');
       sql(
@@ -441,13 +442,6 @@ const FORMAT_FILES_COLUMNS = [
 
 
 
-// const markers = [
-//   [56.718682, 37.650705],
-//   [55.718, 37.65070]
-// ];
-
-// initMap(markers)
-
 
 
 function initMap(map, tableData){
@@ -468,8 +462,8 @@ function initMap(map, tableData){
     addPointToMap(map, coords, markerCluster, 
       `<div>
           <h5>${title}</h5>
-          <img src="${UPLOAD_PATH + path}" width="100"/>
-      </div>`);
+          <img src="${UPLOAD_PATH + path}" width="200"/>
+      </div>`, table, tableData[i].id);
   }
   map.addLayer(markerCluster);
 
@@ -498,11 +492,15 @@ function addPointToMap(map, coords, markerCluster, text, table, id) {
   const marker = L.marker(coords, { draggable: true }).addTo(map);
   marker.bindPopup(text)
 
+  marker.getPopup().on('remove', ()=>{ table.clearFilter('id') });
+
   markerCluster.addLayer(marker);
 
   marker.on('click' , event =>{
-    console.log(event);
+    // console.log(event);
     
+    table.setFilter('id', '=', id)
+
   })
 
   marker.on('dragend', function (event) {
@@ -510,6 +508,7 @@ function addPointToMap(map, coords, markerCluster, text, table, id) {
     const newPos = [position.lat, position.lng];
     console.log(newPos);
   });
+  return marker;
 }
 
 
@@ -658,13 +657,23 @@ btnDeleteFile.onclick = ()=>{
 table.on('tableBuilt', function(e){
     loadDataToTable(STANDARD_QUERY  + where + ORDER_BY  )
 });
+let flag = false;
+table.on("dataFiltered", function(filters, rows){
 
-
+  try{
+  const data = []
+    rows.forEach(row=>{
+      data.push(row.getData());
+    })
+    initMap(map, data);
+  }catch(e){ 
+    console.error(e);}
+});
 
 table.on('dataLoaded', async function(data){
-    if(!data) return;
+  if(!data) return;
     // console.log(data);
-    table.redraw();
+    // table.redraw();
     
     btnShowMyFiles.onclick = ()=>{
         table.setHeaderFilterValue("user_created", USER);
@@ -674,8 +683,14 @@ table.on('dataLoaded', async function(data){
     if(EVENT_ID) table.setFilter('event_id','=', EVENT_ID );
     
     // console.log(markers)
+    
+    flag = true;
     initMap(map, data);
+
+
 });
+
+
 
 srch.addEventListener('input',(e)=>{
     if(e.target.value === ''){

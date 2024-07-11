@@ -52,28 +52,37 @@ async function load() {
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
+    let ID;
     try {
-
-        const ID = await saveToBD(file.name, transliterate(file.name), user_created);
-        await loadOne(file);
-
-        let exif = await getExif(file);
-        let gps = getGPSCoords(exif)
-        // let deviceModel = (exif.Make) ? (exif.Make + '_' + exif.Model) : null;
-
-        const res = await sql(`UPDATE files SET gps_str = '${gps}' WHERE id = ${ID}`);
-        if(res.errors) {
-            throw new Error(JSON.stringify(res.errors));
-        }
-
+      ID = await saveToBD(
+        file.name,
+        transliterate(file.name),
+        user_created
+      );
+      await loadOne(file);
     } catch (e) {
-
       console.error(e);
       print(`ERR - ${file.name} - Ошибка загрузки файла`);
       continue;
-
     }
-}
+
+    try {
+      let exif = await getExif(file);
+      let gps = getGPSCoords(exif);
+      let deviceModel = (exif.Make) ? (exif.Make + '_' + exif.Model) : null;
+
+      const res = await sql(
+        `UPDATE files SET gps_str = '${gps}', deviceModel = '${deviceModel}'  WHERE id = ${ID}`
+      );
+      if (res.errors) {
+        throw new Error(JSON.stringify(res.errors));
+      }
+    } catch (e) {
+      console.error(e);
+      print(`ERR - ${file.name} - Ошибка определения EXIF`);
+      continue;
+    }
+  }
   print(`-- ГОТОВО --`);
 }
 
