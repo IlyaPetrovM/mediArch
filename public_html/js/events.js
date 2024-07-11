@@ -16,6 +16,7 @@
         field: 'title',
         title: 'Название',
         editor: 'input',
+        headerFilter:'input',
         cellEdited: (cell) => {
           const val = cell.getValue();
           const id = cell.getRow().getData().id;

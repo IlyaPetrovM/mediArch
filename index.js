@@ -129,8 +129,9 @@ app.post('/api/upload', async function(req, res) {
         // console.log('SESSION: ',req.session.user)
         
     } catch (err) {
-        console.log(err)
-        res.status(500).send({errors: err, data: 'ERROR', message: 'ERROR'});
+        console.error( 'пользователь: ', req.session.username);
+        console.error(err)
+        res.status(500).send({errors: err, data: 'ERROR', message: 'ERROR '});
     }
 });
 

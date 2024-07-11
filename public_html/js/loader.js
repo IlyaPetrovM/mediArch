@@ -432,7 +432,7 @@ sql('SELECT curtime() as t').then(res => {
 
 
 function addEventsToList(){
-    sql(`SELECT * FROM events ORDER BY date_start DESC, id DESC`).then(res => {
+    sql(`SELECT * FROM events ORDER BY id DESC, date_start DESC`).then(res => {
         if(res.errors) return;
         console.log(res.data)
         const x = document.getElementById('selectEvents');
