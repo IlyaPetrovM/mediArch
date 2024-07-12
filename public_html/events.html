@@ -60,7 +60,31 @@
         </div>
     </div>
 
+
+        <!-- Modal -->
+        <div class="modal fade" id="modalAddEvent" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="modalAddEventLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-fullscreen-md-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modalAddEventLabel">Укажите данные</h1>
+                    <button id='btnCloseModal' type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть" id="closeModalButton"></button>
+                </div>
+                <div class="modal-body" id="modalAddEventBody">
+                     <!-- Content -->
+                    <form class="form" id="formAddEvent" class="row">
+                        <input  name="title" placeholder="Название события" type="text" class="form-control" />
+                       <input name="date_start" placeholder="Дата" type="date"  class="form-control" />
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button id="btnSaveModal" class="btn btn-success">Сохранить</button>
+                </div>
+            </div>
+        </div>
     </div>
+
+    
 </body>
     <script src='js/sql.js' ></script>
     <script src='js/events.js'></script>

@@ -1,0 +1,61 @@
+<button>find EXIF</button>
+<script src='js/imported/exif-js.js'></script>
+<script src='js/sql.js'></script>
+<script>
+
+
+(async()=>{
+  const directoryPath = 'uploads/';
+
+  const res = await sql(`SELECT name FROM files`);
+  const files = res.data;
+  console.log(files)
+
+
+    files.forEach(async (file) => {
+      const fullPath = directoryPath + file.name;
+      const file = new File(directoryPath + f.name)
+
+      cnt += 1;
+      if (cnt > 10) return;
+
+      try {
+        let exif = await getExif(file);
+        // let gps = getGPSCoords(exif);
+        // let deviceModel = (exif.Make) ? (exif.Make + '_' + exif.Model) : null;
+
+        // const res = await sql(
+        //   `UPDATE files SET gps_str = '${gps}', deviceModel = '${deviceModel}'  WHERE id = ${ID}`
+        // );
+        if (res.errors) {
+          throw new Error(JSON.stringify(res.errors));
+        }
+      } catch (e) {
+        console.error(e);
+        console.log(`ERR - ${file.name} - Ошибка определения EXIF`);
+      }
+    });
+
+
+})();
+
+  /**
+   * @brief Получает EXIF-данные из фотографии
+   * @param [in] File file - фотография или просто файл
+   * @return JSON с информацией EXIF
+   */
+  async function getExif(file) {
+    try {
+      EXIF.enableXmp();
+      return new Promise((resolve) => {
+        EXIF.getData(file, function () {
+          return resolve(EXIF.getAllTags(this));
+        });
+      });
+    } catch (e) {
+      console.error(e);
+      return undefined;
+    }
+  }
+
+</script>

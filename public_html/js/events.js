@@ -70,23 +70,83 @@
     }, 'POST');
   });
 
-  buttonAddEvent.onclick = async ()=>{
-    try{
-      const res = await sql (`INSERT INTO events (user_created) VALUES ('${USER}') `);
-      if(res.errors){
-        alert('Ошибка при добавлении события в базу')
-        console.log(res)
-        return 
+  buttonAddEvent.onclick = addEventWithModal ; 
+  // async ()=>{
+  //   try{
+  //     const res = await sql (`INSERT INTO events (user_created) VALUES ('${USER}') `);
+  //     if(res.errors){
+  //       alert('Ошибка при добавлении события в базу')
+  //       console.log(res)
+  //       return 
+  //     }
+  //     const row = table.addRow({
+  //       id: res.data.insertId,
+  //       user_created: USER,
+  //     }, 1)
+  //     table.deselectRow();
+  //     table.selectRow(res.data.insertId);
+  //     // await addEventWithModal();
+  //   }catch(e){
+  //     console.log(e)
+  //     alert('Не удалось добавить событие')
+  //   }
+  // }
+
+  async function addEventWithModal(){
+    const modalAddEvent = document.getElementById('modalAddEvent');
+    const modal = new bootstrap.Modal(modalAddEvent);
+    const formElem = document.getElementById('formAddEvent');
+
+    modal.toggle();
+
+    document.getElementById('btnCloseModal').addEventListener('click', () => formElem.reset());
+   
+    document.getElementById('btnSaveModal').addEventListener('click', async (e) => {
+      const form = new FormData(document.getElementById('formAddEvent'));
+      if(form.get('date_start')==''){
+        alert('Дата не указана! Укажите дату события.')
+        return;
       }
-      const row = table.addRow({
-        id: res.data.insertId,
-        user_created: USER,
-      }, 1)
-      table.deselectRow();
-      table.selectRow(res.data.insertId);
-    }catch(e){
-      console.log(e)
-      alert('Не удалось добавить событие')
-    }
+      
+      console.log(
+        form.get('title'),
+        form.get('date_start')
+      )
+      
+      // Сохранение тут.
+      try{
+        const res = await sql (`INSERT INTO events (
+              user_created,
+              title,
+              date_start
+            ) 
+            VALUES (
+              '${USER}', 
+              '${form.get('title')}', 
+              '${form.get('date_start')}'
+            ) `);
+        if(res.errors) throw new Error(JSON.stringify(res.errors));
+
+        const row = table.addRow({
+          id:           res.data.insertId,
+          user_created: USER,
+          title:        form.get('title'),
+          date_start:   form.get('date_start')
+        }, 1)
+
+        table.deselectRow();
+        table.selectRow(res.data.insertId);
+        
+      }catch(e){
+        console.error(e);
+        alert('Не удалось добавить событие')
+      }
+
+      
+      console.log('saved')
+      formElem.reset();
+      modal.toggle();
+    })
   }
+
 })();
