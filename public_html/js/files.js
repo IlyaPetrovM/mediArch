@@ -702,7 +702,7 @@ async function startRecognition(REC_ID, inputPath, cell) {
  */
 
 var table = new Tabulator("#fileTable", {
-    height:"calc(100vh - 58px)",
+    height:"calc(100vh - 64px)",
     // maxWidth:"calc(300px)",
     // responsiveLayout:'collapse',
     // layout: "fitColumns",

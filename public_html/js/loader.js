@@ -1,4 +1,5 @@
 uploadButton.addEventListener('click', load)
+uploadButton2.addEventListener('click', loadOneMulter)
 
 //Перехватываем событие отправки формы, чтобы нас не перенаправляло на другие страницы
 loaderForm.addEventListener('submit', (e) => {
@@ -15,20 +16,43 @@ fetch('/api/session/username', {
     user_created = json.data;
 })
 
+async function loadOneMulter(){
+  const files = filesInput.files;
+  const file = files[0];
+  console.log(file, typeof(file))
+  const chunkSize = 1024 * 1024; //1 MB
+  const totalChunks = Math.ceil(file.size / chunkSize);
+  let startByte = 0;
 
-// let response = await fetch('/api/sql', {
-//     method: 'POST',
-//     headers: {
-//         'Content-Type': 'application/json'
-//     },
-//     body: JSON.stringify({
-//         'query': query,
-//         'inserts': inserts
-//     })
-// });
-// if (response.ok) {
-//     return await response.json();
-// }
+  for(let i=1; i <= totalChunks; i++){
+    const endByte = Math.min( startByte + chunkSize, file.size );
+    const chunk = file.slice( startByte, endByte );
+    await uploadChunk( chunk, totalChunks, i );
+    startByte = endByte;
+  }
+
+  console.info('Multer Upload complete')
+
+}
+
+async function uploadChunk(chunk, totalChunks, currnetChunk){
+  const formData = new FormData();
+  formData.append('file', chunk);
+  formData.append('totalChunks', totalChunks);
+  formData.append('currnetChunk', currnetChunk);
+  const response = await fetch('/api/upload/multer/chunk',{
+    method: 'POST',
+    body: formData
+  })
+  if(!response.ok){
+    throw new Error('Chunk upload failed');
+  }
+  if (response.ok){
+    const data = await response.json()
+    console.log(data)
+    return data;
+}
+}
 
 /** 
    Общее
@@ -54,12 +78,12 @@ async function load() {
     const file = files[i];
     let ID;
     try {
+      await loadOne(file);
       ID = await saveToBD(
         file.name,
         transliterate(file.name),
         user_created
       );
-      await loadOne(file);
     } catch (e) {
       console.error(e);
       print(`ERR - ${file.name} - Ошибка загрузки файла`);
@@ -147,9 +171,9 @@ async function loadOne(file) {
     console.log(`... грузим на сервер ...`);
     const res = await loadFileXhr(file, progressPrint); // с помощью await ждём загрузки каждого файла по отдельности
     if (res.errors) {
-        throw new Error();
+        throw new Error(JSON.stringify(res.errors));
     }
-    console.log(`OK - ${file.name} - загружен на сервер ...`);
+    print(`OK - ${file.name} - загружен на сервер ...`);
     return res;
 }
 

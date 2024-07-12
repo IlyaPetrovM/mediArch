@@ -4,16 +4,22 @@
 
 const express = require('express');
 const mysql = require('mysql')
-const fileUpload = require('express-fileupload');
+
 const fs = require('fs');
+
+const fileUpload = require('express-fileupload');
+const multer = require('multer'); // alternative to express-fileupload
+
 
 const session = require('express-session')
 const crypto = require('crypto')
 
 
+
 const config  = require('./config')
 const users  = require('./users')
-const recognizeAudio = require('./recognizeAudio')
+const recognizeAudio = require('./recognizeAudio');
+const { pipeline } = require('stream');
 
 const app = express()
 
@@ -22,10 +28,12 @@ const app = express()
 app.use(fileUpload({ 
     createParentPath: true,
     useTempFiles: true,
-    limits: { fileSize: 100 * 1024 * 1024 * 1024 },
-    tempFileDir: "/tmp/"
+    limits: { fileSize: 1000 * 1024 * 1024 * 1024 },
+    tempFileDir: "./tmp/",
+    uploadTimeout:0
  })) // enable files upload
 app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({ extended:true }));
 
 // Инициализация express-session
 app.use(session({
@@ -38,7 +46,7 @@ app.use(session({
 }));
 
 app.get('/index.html',(req, res)=>{
-    console.log('INDEX')
+    // console.log('INDEX')
     res.sendFile(__dirname + '/public_html/index.html');
 })
 
@@ -67,8 +75,8 @@ app.get('/style/*', (req, res) => {
 
 app.use((req, res, next) => {
     // Здесь вы можете добавить вашу логику проверки условий
-    console.log('Проверка!')
-    console.log(req.session)
+    // console.log('Проверка!')
+    // console.log(req.session)
 
     if (!req.session.user) {
         console.log('Пользователь не авторизован!')
@@ -94,46 +102,104 @@ app.post('/api/session/end', (req, res)=>{
 
 
 
+// const storage = multer.diskStorage({
+//     destination: function(req, file, cb){
+//         cb(null, config.UPLOAD_PATH);
+//     },
+//     filename: function(req, file, cb){
+//         cb(null, file.originalname);
+//     }
+// })
+
+// const upload = multer({ storage:storage })
+const CHUNKS_DIR = './chunks/'
+
 
 /** 
     Обработка POST-запросов по адресу ... /api/upload
     в форме должен быть указан этот адрес: <form action='/api/upload'
 */
-app.post('/api/upload', async function(req, res) {
 
+
+async function assembleChunks(filename, totalChunks){
+    const writer = fs.createWriteStream('./tmp/' +  filename);
+    for(let i = 1; i <= totalChunks; i++){
+        const chunkPath = `${CHUNKS_DIR}/${filename}.${i}`;
+        await pipeline(pump(fs.createReadStream(chunkPath)), pump(writer));
+    }
+}
+
+
+/** 
+    Обработка POST-запросов по адресу ... /api/upload
+    в форме должен быть указан этот адрес: <form action='/api/upload'
+*/
+app.post('/api/upload', function(req, res) {
+    console.info('\n-----------file upload Start----------');
     try {
-         console.info('\n-----------file upload Start----------');
-         console.info( 'пользователь: ', req.session.username);
-         console.info('\n');
-        if (!req.files) res.send('ERROR. No file uploaded');
+        // console.info('\n');
         
+        if (req.files == null || req == undefined || req.files == undefined) res.send('ERROR. No file uploaded');
+
         let files = req.files.many_files; // так как мы пишем <input name="many_files" 
-        if (files.length > 1)
+        if (files.length > 1){
             files.forEach(function(file, index){
                 file.name = Buffer.from(file.name, 'latin1').toString('utf8');
                 let filePath = config.UPLOAD_PATH + 'newFile' + transliterate(file.name);
                 file.mv(filePath);
                 console.info('filePath:',filePath);
-//                let fct = getFileCreationTime()
             })
+        }else{
+                
+                console.info( 'пользователь: ', req.session.user.username); //req.session.user.username
+                console.info(files.name);
 
-        else{
                 files.name = Buffer.from(files.name, 'latin1').toString('utf8');
                 let filePath = config.UPLOAD_PATH + transliterate(files.name);
-                console.log(filePath);
+                console.info('new filePath:',filePath);
                 files.mv(filePath);
-//                let fctime = await getFileCreationTime(filePath)
-//                console.log('METADATA:', await fileMetadata('index.js'));
         }
         res.send( {errors: null, data: files.name, message: 'OK'} );
         // console.log('SESSION: ',req.session.user)
         
     } catch (err) {
-        console.error( 'пользователь: ', req.session.username);
+        console.error( new Date().toLocaleString(),'Произошла ошибка у пользователя: ', req.session.user.username);
         console.error(err)
         res.status(500).send({errors: err, data: 'ERROR', message: 'ERROR '});
     }
 });
+
+
+app.post('/api/upload/multer/chunk', function(req, res) {
+    console.log('\n multer start uploading');
+    
+    const { files, totalChunks, currnetChunk } = req;
+    console.log(files, totalChunks, currnetChunk)
+    const file = files[0];
+    const chunkFileName = `${file.name}.${currnetChunk}`;
+    const chunkPath = `${CHUNKS_DIR}/${chunkFileName}`;
+    
+    console.log(chunkPath);
+    // fs.rename(file.path, chun)
+    fs.rename(file.path, chunkPath, (err) => {
+        if(err){
+            console.error('Err moving chunk file', err);
+            res.status(500).send('Err moving chunk file');
+        }else{
+            if(+currnetChunk === +totalChunks){
+                assembleChunks(file.name, totalChunks)
+                    .then(() => res.send('Success'))
+                    .catch((err) => {
+                        console.error('Err ass 142');
+                        res.status(500).send('Err moving chunk file');
+                    });
+            } else {
+                res.send('Chunk success 146');
+            }
+        }
+    })
+})
+
 
 /** 
     Перенаправление запроса к базе данных
@@ -159,6 +225,9 @@ app.get('/api/servertime', (req, res) => {
     res.send(serverTime);
 });
 
+
+
+
 /** 
     Перенаправление запроса к базе данных возвращение только данных таблицы
 */
@@ -177,6 +246,10 @@ app.post('/api/sql/dataOnly', function(req, res) {
     conn.end();
 });
 
+
+
+
+
 /** 
     Перенаправление запроса к базе данных
 */
@@ -186,18 +259,9 @@ app.post('/api/speech-recognition', function(req, res) {
     
     recognizeAudio('public_html/' + inputPath, 'temp_audio/', recId, fragmentDuration, function(fragments){
         console.log('\n  Удалось обработать кусочки:', fragments)
-        //todo sql-запрос
 
-//        text = ''
-//        for (let i in fragments){
-//            text += i + ':'+ fragments[i].recognitionResults.variant[0]._ + ' '
-//        }
-//
         const conn = mysql.createConnection(config.DB)
-//        conn.query(`UPDATE files SET recognizedText= concat_ws(recognizedText, '${text}') WHERE id=${recId}`, (errors, data, fields) => {
-//            if (errors) console.error(errors);
-//            console.log(text, '--- ЗАПИСАН')
-//        });
+
         conn.query(`UPDATE files SET recognitionStatus='Готово' WHERE id=${recId}`, (errors, data, fields) => {
             if (errors) console.error(errors);
             console.log('Статус ГОТОВО')
@@ -223,6 +287,8 @@ const alphabet = {
     "я":"ya","ч":"ch","с":"s","м":"m","и":"i","т":"t","ь":"","б":"b","ю":"yu",
     ' ':'_'};
 
+
+
 /**
  * Преобразует кириллицу в латиницу
  * @param {String} word 
@@ -234,6 +300,10 @@ function transliterate(word){
     return alphabet[char] || char; 
   }).join("");
 }
+
+
+
+
 ///**
 // * @brief getFileCreationTime
 // * @param
