@@ -7,8 +7,10 @@ const mysql = require('mysql')
 
 const fs = require('fs');
 
+const pump = require('pump');
+
 const fileUpload = require('express-fileupload');
-const multer = require('multer'); // alternative to express-fileupload
+// const multer = require('multer'); // alternative to express-fileupload
 
 
 const session = require('express-session')
@@ -27,9 +29,7 @@ const app = express()
 
 app.use(fileUpload({ 
     createParentPath: true,
-    useTempFiles: true,
     limits: { fileSize: 1000 * 1024 * 1024 * 1024 },
-    tempFileDir: "./tmp/",
     uploadTimeout:0
  })) // enable files upload
 app.use(express.json({limit: '50mb'}));
@@ -74,10 +74,6 @@ app.get('/style/*', (req, res) => {
 })
 
 app.use((req, res, next) => {
-    // Здесь вы можете добавить вашу логику проверки условий
-    // console.log('Проверка!')
-    // console.log(req.session)
-
     if (!req.session.user) {
         console.log('Пользователь не авторизован!')
         // Если условие не выполнено, отправляем сообщение об ошибке
@@ -112,22 +108,9 @@ app.post('/api/session/end', (req, res)=>{
 // })
 
 // const upload = multer({ storage:storage })
-const CHUNKS_DIR = './chunks/'
+const CHUNKS_DIR = config.CHUNKS_DIR;
 
 
-/** 
-    Обработка POST-запросов по адресу ... /api/upload
-    в форме должен быть указан этот адрес: <form action='/api/upload'
-*/
-
-
-async function assembleChunks(filename, totalChunks){
-    const writer = fs.createWriteStream('./tmp/' +  filename);
-    for(let i = 1; i <= totalChunks; i++){
-        const chunkPath = `${CHUNKS_DIR}/${filename}.${i}`;
-        await pipeline(pump(fs.createReadStream(chunkPath)), pump(writer));
-    }
-}
 
 
 /** 
@@ -170,35 +153,77 @@ app.post('/api/upload', function(req, res) {
 });
 
 
-app.post('/api/upload/multer/chunk', function(req, res) {
-    console.log('\n multer start uploading');
-    
-    const { files, totalChunks, currnetChunk } = req;
-    console.log(files, totalChunks, currnetChunk)
-    const file = files[0];
-    const chunkFileName = `${file.name}.${currnetChunk}`;
+
+
+
+
+
+
+
+app.post('/api/upload/chunks', function(req, res) {
+
+    const { files: {file}, body:{totalChunks, currnetChunk, filename} } = req;
+    filenameLatin = transliterate(filename)
+    const chunkFileName = `${filenameLatin}.${currnetChunk}`;
     const chunkPath = `${CHUNKS_DIR}/${chunkFileName}`;
     
     console.log(chunkPath);
-    // fs.rename(file.path, chun)
-    fs.rename(file.path, chunkPath, (err) => {
+    if(fs.existsSync(chunkPath)) {
+        if(+currnetChunk === +totalChunks){
+            assembleChunks(filenameLatin, totalChunks)
+                .then(() => res.send({errors: null, data: filenameLatin, message: 'Chunk success 177'}))
+                .catch((err) => {
+                    console.error('Err ass 179');
+                    console.error(err);
+                    res.status(500).send({errors: err, data: "ERR", message: 'err 180'});
+                });
+        } else {
+            res.send({errors: null, data: chunkPath, message: 'Chunk exists 146'} );
+        }
+        return;
+    }
+    file.mv(chunkPath, err => {
         if(err){
-            console.error('Err moving chunk file', err);
-            res.status(500).send('Err moving chunk file');
+            console.error(err);
         }else{
             if(+currnetChunk === +totalChunks){
-                assembleChunks(file.name, totalChunks)
-                    .then(() => res.send('Success'))
+                assembleChunks(filenameLatin, totalChunks)
+                    .then(() => res.send({errors: null, data: filenameLatin, message: 'Chunk success 177'}))
                     .catch((err) => {
-                        console.error('Err ass 142');
-                        res.status(500).send('Err moving chunk file');
+                        console.error('Err ass 179');
+                        console.error(err);
+                        res.status(500).send({errors: err, data: "ERR", message: 'err 180'});
                     });
             } else {
-                res.send('Chunk success 146');
+                res.send({errors: null, data: chunkPath, message: 'Chunk success 146'} );
             }
         }
     })
+
 })
+
+async function assembleChunks(filename, totalChunks){
+    const filePath = config.UPLOAD_PATH + filename;
+    const out = fs.createWriteStream(filePath);
+    for(let i = 1; i <= totalChunks; i++){
+       
+        const chunkPath = `${CHUNKS_DIR}/${filename}.${i}`;
+        const chunk = fs.readFileSync(chunkPath);
+        out.write(chunk);
+        fs.unlink(chunkPath, (err)=> {if(err)console.error(err)});
+    }
+    out.end();
+    // const chunkPath = `${CHUNKS_DIR}/${filename}.${totalChunks}`;
+    // await fs.createReadStream(chunkPath).pipe(out, { end: true });
+    // fs.unlink(chunkPath, (err)=> {if(err)console.error(err)});
+}
+
+
+
+
+
+
+
 
 
 /** 

@@ -1,5 +1,4 @@
 uploadButton.addEventListener('click', load)
-uploadButton2.addEventListener('click', loadOneMulter)
 
 //Перехватываем событие отправки формы, чтобы нас не перенаправляло на другие страницы
 loaderForm.addEventListener('submit', (e) => {
@@ -16,31 +15,35 @@ fetch('/api/session/username', {
     user_created = json.data;
 })
 
-async function loadOneMulter(){
-  const files = filesInput.files;
-  const file = files[0];
-  console.log(file, typeof(file))
-  const chunkSize = 1024 * 1024; //1 MB
-  const totalChunks = Math.ceil(file.size / chunkSize);
+async function loadByChunks(file){
+  // console.log(file, typeof(file))
+  const chunkSize = 1024 * 1024 * 10; //10 MB
+  const totalChunks = Math.ceil(file.size / chunkSize)+1;
+  const ost = file.size - (chunkSize * totalChunks);
+  console.log(file.size / chunkSize )
   let startByte = 0;
 
   for(let i=1; i <= totalChunks; i++){
     const endByte = Math.min( startByte + chunkSize, file.size );
     const chunk = file.slice( startByte, endByte );
-    await uploadChunk( chunk, totalChunks, i );
+    if(i == totalChunks) print('   соединяю файл воедино... подождите (здесь может долго висеть 100%)')
+      await uploadChunk( chunk, totalChunks, i, file.name );
     startByte = endByte;
-  }
+    progressOutput.value = Math.ceil((i / totalChunks) * 10000) / 100 + '%\t-->\t' + file.name + '\n';
 
-  console.info('Multer Upload complete')
+
+  }
+  console.info('Upload complete')
 
 }
 
-async function uploadChunk(chunk, totalChunks, currnetChunk){
+async function uploadChunk(chunk, totalChunks, currnetChunk, filename){
   const formData = new FormData();
   formData.append('file', chunk);
   formData.append('totalChunks', totalChunks);
   formData.append('currnetChunk', currnetChunk);
-  const response = await fetch('/api/upload/multer/chunk',{
+  formData.append('filename', filename);
+  const response = await fetch('/api/upload/chunks',{
     method: 'POST',
     body: formData
   })
@@ -78,7 +81,7 @@ async function load() {
     const file = files[i];
     let ID;
     try {
-      await loadOne(file);
+      await loadByChunks(file)
       ID = await saveToBD(
         file.name,
         transliterate(file.name),

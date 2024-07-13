@@ -12,3 +12,5 @@ vosk-model*
 out.txt
 errors.txt
 tmp/*
+assembledChunks/*
+chunks/*
