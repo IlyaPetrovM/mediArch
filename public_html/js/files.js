@@ -170,6 +170,7 @@ const FORMAT_FILES_COLUMNS = [
     field: 'name',
     visible: false,
     width:50,
+    hozAlign:'right',
     headerWordWrap: true,
   },
   {
@@ -181,6 +182,9 @@ const FORMAT_FILES_COLUMNS = [
     field: 'event_title',
     title: 'Событие',
     editor: 'list',
+    // formatter:(cell)=>{cell.style.whiteSpace = 'pre-wrap'; return `<small>  ${cell.getValue()} </small>`},
+    width:120,
+    headerFilter:'input',
     cellEdited: (cell) => {
       console.log('event_title');
       sql(
@@ -228,7 +232,9 @@ const FORMAT_FILES_COLUMNS = [
   {
     title: 'Имя файла',
     field: 'oldName',
-    formatter: 'input',
+    hozAlign:'right',
+    vertAlign:'middle',
+    // formatter: 'textarea',
     // visible: false,
     width:80,
     headerWordWrap: true,
@@ -269,6 +275,7 @@ const FORMAT_FILES_COLUMNS = [
     title: 'Тип',
     field: 'fileType',
     // visible: false,
+    headerMenu:headerMenu,
     editor: 'list',
     hozAlign: 'center',
     editorParams: {
@@ -288,8 +295,8 @@ const FORMAT_FILES_COLUMNS = [
     },
   },
   //play
-  {
-    field: 'play',
+  {field: 'play',
+    headerMenu:headerMenu,
     formatter: () => {
       return ICON_PLAY;
     },
@@ -297,11 +304,10 @@ const FORMAT_FILES_COLUMNS = [
     hozAlign: 'center',
     cellClick: function (e, cell) {
       playFile(e, cell.getRow().getData().name, true);
-    },
-  },
+    },},
   //marks
-  {
-    field: 'marks',
+  {field: 'marks',
+    headerMenu:headerMenu,
     formatter: (cell) => {
       if (
         cell.getRow().getData().fileType == 'audio' ||
@@ -313,14 +319,13 @@ const FORMAT_FILES_COLUMNS = [
       else return '';
     },
     width: 20,
-    hozAlign: 'center',
-  },
-  //view
-  {
-    title: 'Просмотр',
+    hozAlign: 'center'},
+
+  {title: 'Просмотр',
     field: 'view',
     width: 80,
     hozAlign: 'center',
+    headerMenu:headerMenu,
     formatter: function (cell) {
       return `<img alt=':(' src='${
         UPLOAD_PATH  +  cell.getRow().getData().name
@@ -466,6 +471,91 @@ const FORMAT_FILES_COLUMNS = [
 ];
 
 
+
+var rowMenu = [
+  {
+      label:"<i class='fas fa-user'></i> Change Name",
+      action:function(e, row){
+          row.update({name:"Steve Bobberson"});
+      }
+  },
+  {
+      label:"<i class='fas fa-check-square'></i> Select Row",
+      action:function(e, row){
+          row.select();
+      }
+  },
+  {
+      separator:true,
+  },
+  {
+      label:"Admin Functions",
+      menu:[
+          {
+              label:"<i class='fas fa-trash'></i> Delete Row",
+              action:function(e, row){
+                  row.delete();
+              }
+          },
+          {
+              label:"<i class='fas fa-ban'></i> Disabled Option",
+              disabled:true,
+          },
+      ]
+  }
+]
+
+//define column header menu as column visibility toggle
+function headerMenu(){
+  var menu = [];
+  var columns = this.getColumns();
+
+  for(let column of columns){
+
+      //create checkbox element using font awesome icons
+      let icon = document.createElement("i");
+      icon.classList.add("fas");
+      icon.classList.add(column.isVisible() ? "fa-check-square" : "fa-square");
+
+      //build label
+      let label = document.createElement("span");
+      let title = document.createElement("span");
+
+      title.textContent = " " + column.getDefinition().title;
+
+      label.appendChild(icon);
+      label.appendChild(title);
+
+      //create menu item
+      menu.push({
+          label:label,
+          action:function(e){
+              //prevent menu closing
+              e.stopPropagation();
+
+              //toggle current column visibility
+              column.toggle();
+
+              //change menu item icon
+              if(column.isVisible()){
+                  icon.classList.remove("fa-square");
+                  icon.classList.add("fa-check-square");
+              }else{
+                  icon.classList.remove("fa-check-square");
+                  icon.classList.add("fa-square");
+              }
+          }
+      });
+  }
+
+ return menu;
+};
+
+
+
+
+
+
 function editorInformants(filesCell, onRendered, success, cancel, editorParams) {
   //cell - the cell component for the editable cell
   //onRendered - function to call when the editor has been rendered
@@ -501,6 +591,7 @@ function editorInformants(filesCell, onRendered, success, cancel, editorParams) 
       ajaxContentType: 'json',
       autoColumns: true,
       data: res.data,
+      
       autoColumnsDefinitions: [
         {
             field: 'id',
@@ -707,6 +798,7 @@ var table = new Tabulator("#fileTable", {
     // responsiveLayout:'collapse',
     // layout: "fitColumns",
     selectableRows:1,
+    // rowContextMenu: rowMenu, 
     rowHeader: {
         headerSort: false,
         resizable: false,
@@ -725,7 +817,7 @@ var table = new Tabulator("#fileTable", {
     autoColumns: true,
     pagination:true,
     paginationSize: 8,
-    rowHeight:100,
+    rowMaxHeight:100,
     paginationSizeSelector: [5, 8, 15, 25, 100],
     // rowHeader:{formatter:"rownum", headerSort:true, hozAlign:"center", resizable:true, frozen:true},
     autoColumnsDefinitions: FORMAT_FILES_COLUMNS
