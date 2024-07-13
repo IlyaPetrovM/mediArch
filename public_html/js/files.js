@@ -76,8 +76,20 @@ const ICON_PLAY = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
 
 const ICON_TEXT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-text" viewBox="0 0 16 16"> <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/> <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/> </svg>';
 
+
+
+
+
+
+
+
+
 /**
+ * 
+ * 
  * Форматирование колонок таблицы
+ * 
+ * 
  */
 const FORMAT_FILES_COLUMNS = [
   //id
@@ -86,6 +98,9 @@ const FORMAT_FILES_COLUMNS = [
     width: 40,
     hozAlign: 'center',
   },
+
+
+
   //tags
   {
     title: 'Теги',
@@ -117,6 +132,9 @@ const FORMAT_FILES_COLUMNS = [
       );
     },
   },
+
+
+
   {
     field:'status',
     title:'Удаление',
@@ -138,15 +156,16 @@ const FORMAT_FILES_COLUMNS = [
       ],
       freetext: false,
     },
-    // formatter:(e)=>{
-
-    // }
   },
-  //description
+
+
+
+
+
   {
+    field: 'description',
     title: 'Описание',
     headerWordWrap: true,
-    field: 'description',
     editor: 'textarea',
     width: 200,
     formatter: 'textarea',
@@ -166,6 +185,8 @@ const FORMAT_FILES_COLUMNS = [
       );
     },
   },
+
+
   {
     field: 'name',
     visible: false,
@@ -173,11 +194,16 @@ const FORMAT_FILES_COLUMNS = [
     hozAlign:'right',
     headerWordWrap: true,
   },
+
+
   {
     field: 'event_id',
     visible: false,
     headerFilter: 'input',
   },
+
+
+
   {
     field: 'event_title',
     title: 'Событие',
@@ -229,6 +255,8 @@ const FORMAT_FILES_COLUMNS = [
     headerWordWrap: true,
     headerFilter: 'input',
   },
+
+
   {
     title: 'Имя файла',
     field: 'oldName',
@@ -240,6 +268,9 @@ const FORMAT_FILES_COLUMNS = [
     headerWordWrap: true,
     headerFilter: 'input',
   },
+
+
+
   //recognizedText
   {
     field: 'recognizedText',
@@ -255,6 +286,9 @@ const FORMAT_FILES_COLUMNS = [
       );
     },
   },
+
+
+
   //'recognitionStatus'
   {
     // TODO добавить возможность "заказывать" распознавание и разрывать сессию
@@ -270,6 +304,9 @@ const FORMAT_FILES_COLUMNS = [
       );
     },
   },
+
+
+
   //fileType
   {
     title: 'Тип',
@@ -295,13 +332,19 @@ const FORMAT_FILES_COLUMNS = [
     },
   },
 
-  {field: 'play',
+
+
+  {
+    field: 'play',
     width:20, hozAlign: 'center', vertAlign:'middle',
     formatter: () => {return ICON_PLAY;},
     headerMenu: headerMenu,
     cellClick: function (e, cell) {
       playFile(e, cell.getRow().getData().name, true);
-    },},
+    },
+  },
+
+
 
   {field: 'marks',
     headerMenu:headerMenu,
@@ -318,6 +361,8 @@ const FORMAT_FILES_COLUMNS = [
     width: 20,
     hozAlign: 'center'},
 
+
+
   {title: 'Просмотр',
     field: 'view',
     width: 80, hozAlign: 'center', vertAlign:'middle',
@@ -328,6 +373,9 @@ const FORMAT_FILES_COLUMNS = [
       }' class='previewImage'>`;
     },
   },
+
+
+
   //download
   {
     title: 'Скачать',
@@ -343,6 +391,9 @@ const FORMAT_FILES_COLUMNS = [
       downloadFile(e, UPLOAD_PATH + cell.getRow().getData().name);
     },
   },
+
+
+
   //date_created_GMT
   {
     title: 'Дата съёмки (по Гринвичу)',
@@ -361,6 +412,8 @@ const FORMAT_FILES_COLUMNS = [
       else return '';
     },
   },
+
+
   //date_upload
   {
     title: 'Дата загрузки (по Гринвичу)',
@@ -382,6 +435,9 @@ const FORMAT_FILES_COLUMNS = [
       } else return '';
     },
   },
+
+
+
   //date_upload_timezone
   {
     title: 'Часовой пояс даты загрузки',
@@ -390,6 +446,9 @@ const FORMAT_FILES_COLUMNS = [
     width: 60,
     headerWordWrap: true,
   },
+
+
+
   //date_updated
   {
     title: 'Дата обновления',
@@ -406,6 +465,8 @@ const FORMAT_FILES_COLUMNS = [
       else return '';
     },
   },
+
+
   //date_updated_timezone
   {
     title: 'Часовой пояс даты обновления',
@@ -414,6 +475,8 @@ const FORMAT_FILES_COLUMNS = [
     headerWordWrap: true,
     // width:     60,
   },
+
+
   //gps_str
   {
     title: 'GPS',
@@ -423,6 +486,8 @@ const FORMAT_FILES_COLUMNS = [
     headerWordWrap: true,
     width: 80,
   },
+
+
   //date_updated_timezone
   {
     title: 'Часовой пояс даты обновления',
@@ -431,6 +496,8 @@ const FORMAT_FILES_COLUMNS = [
     headerWordWrap: true,
     // width:     60,
   },
+
+
   //fileExt
   {
     title: 'Расширение',
@@ -440,6 +507,8 @@ const FORMAT_FILES_COLUMNS = [
     headerWordWrap: true,
     hozAlign: 'center',
   },
+
+
   //informants
   {
     title: 'Люди',
@@ -450,7 +519,6 @@ const FORMAT_FILES_COLUMNS = [
       editorInformants(cell);
     },
     mutator: (value, data, type, params, component) => {
-      // console.log(value, type);
       if (type == 'data') {
         const informants = JSON.parse(value);
         if (informants.length == 1 && informants[0].id === null) return [];
@@ -460,6 +528,8 @@ const FORMAT_FILES_COLUMNS = [
     },
     formatter: formatInformantList,
   },
+
+
   {
     field: 'deviceModel',
     headerFilter: 'input',
@@ -468,40 +538,15 @@ const FORMAT_FILES_COLUMNS = [
 
 
 
-var rowMenu = [
-  {
-      label:"<i class='fas fa-user'></i> Change Name",
-      action:function(e, row){
-          row.update({name:"Steve Bobberson"});
-      }
-  },
-  {
-      label:"<i class='fas fa-check-square'></i> Select Row",
-      action:function(e, row){
-          row.select();
-      }
-  },
-  {
-      separator:true,
-  },
-  {
-      label:"Admin Functions",
-      menu:[
-          {
-              label:"<i class='fas fa-trash'></i> Delete Row",
-              action:function(e, row){
-                  row.delete();
-              }
-          },
-          {
-              label:"<i class='fas fa-ban'></i> Disabled Option",
-              disabled:true,
-          },
-      ]
-  }
-]
 
-//define column header menu as column visibility toggle
+
+
+
+
+/**
+ * 
+ * @returns menu in header
+ */
 function headerMenu(){
   var menu = [];
   var columns = this.getColumns();
@@ -798,7 +843,7 @@ var table = new Tabulator("#fileTable", {
     // rowContextMenu: rowMenu, 
     rowHeader: {
         headerSort: false,
-        resizable: false,
+        resizable: true,
         frozen: true,
         width: 5,
         headerHozAlign: "center",
@@ -806,11 +851,9 @@ var table = new Tabulator("#fileTable", {
         vertAlign:'middle',
         formatter: "rowSelection",
         titleFormatter: "rowSelection",
-        // cellClick: function (e, cell) {
-        //     cell.getRow().toggleSelect();
-        // }
     },
     placeholder: "Введите поисковую фразу",
+    
     ajaxContentType: "json",
     autoColumns: true,
     pagination:true,
@@ -824,6 +867,8 @@ table.setFilter('status', '!=', 'на удаление')
 table.on("rowSelected", function(row){
   const btn = document.getElementById('btnDeleteFile');
   btn.style.display = 'block';
+
+  playFile(null, row.getData().name, true);
 });
 table.on("rowDeselected", function(row){
   const btn = document.getElementById('btnDeleteFile');
