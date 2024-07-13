@@ -294,18 +294,15 @@ const FORMAT_FILES_COLUMNS = [
       );
     },
   },
-  //play
+
   {field: 'play',
-    headerMenu:headerMenu,
-    formatter: () => {
-      return ICON_PLAY;
-    },
-    // width:     20,
-    hozAlign: 'center',
+    width:20, hozAlign: 'center', vertAlign:'middle',
+    formatter: () => {return ICON_PLAY;},
+    headerMenu: headerMenu,
     cellClick: function (e, cell) {
       playFile(e, cell.getRow().getData().name, true);
     },},
-  //marks
+
   {field: 'marks',
     headerMenu:headerMenu,
     formatter: (cell) => {
@@ -323,9 +320,8 @@ const FORMAT_FILES_COLUMNS = [
 
   {title: 'Просмотр',
     field: 'view',
-    width: 80,
-    hozAlign: 'center',
-    headerMenu:headerMenu,
+    width: 80, hozAlign: 'center', vertAlign:'middle',
+    headerMenu: headerMenu,
     formatter: function (cell) {
       return `<img alt=':(' src='${
         UPLOAD_PATH  +  cell.getRow().getData().name
@@ -798,6 +794,7 @@ var table = new Tabulator("#fileTable", {
     // responsiveLayout:'collapse',
     // layout: "fitColumns",
     selectableRows:1,
+    groupBy:"event_title",
     // rowContextMenu: rowMenu, 
     rowHeader: {
         headerSort: false,
@@ -806,6 +803,7 @@ var table = new Tabulator("#fileTable", {
         width: 5,
         headerHozAlign: "center",
         hozAlign: "center",
+        vertAlign:'middle',
         formatter: "rowSelection",
         titleFormatter: "rowSelection",
         // cellClick: function (e, cell) {
