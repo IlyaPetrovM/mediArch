@@ -15,6 +15,27 @@ function getUrlExtention( url ) {
   return url.split(/[#?]/)[0].split('.').pop().trim().toLowerCase();
 }
 
+let isPlaying = false;
+function playVideo(event){
+  if(isPlaying ){
+    previewVideo.pause()
+  }
+  else{ 
+    previewVideo.play()
+  }
+  isPlaying=!isPlaying;
+}
+btnBack.onclick = back;
+btnForward.onclick = forward;
+
+
+function back(){
+  previewVideo.currentTime -= 5;
+}
+
+function forward(){
+  previewVideo.currentTime += 5;
+}
 
  /**
 * Запуск просмотра файла в окне предпросмотра

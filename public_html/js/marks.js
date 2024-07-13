@@ -190,6 +190,20 @@ async function runMarks(){
     });
     
     btnAddRow.onclick = function(){ addMark(table, FILE_ID);};
+    const btnPlay = document.getElementById('btnPlay')
+    btnPlay.onclick = playVideo;
+    
+    document.body.addEventListener('keydown',(e)=>{
+        if(e.altKey){
+            console.log(e)
+            if(e.code == 'KeyJ') back();
+            if(e.code == 'KeyK') playVideo();
+            if(e.code == 'KeyL') forward();
+
+            if(e.code == 'KeyM')  addMark(table, FILE_ID);
+
+        }
+    })
     
     previewVideo.ontimeupdate = function(e){ 
         timeMonitor.innerHTML = toHHMMSSsss(previewVideo.currentTime*1000);
