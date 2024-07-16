@@ -29,27 +29,33 @@ TODO аутентификация!!!
         <!-- Панель навигации -->
 
         <div class=row>
-            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <nav class="navbar navbar-expand-xl navbar-light bg-light">
                 <div class="container-fluid">
-                    <nav class="nav nav-tabs">
-                        <a href='/load.html' class="nav-link">Загрузка</a>
-                        <a href='/events.html' class="nav-link">События</a>
-                        <a href='/files.html' class="nav-link active">Файлы</a>
-                        <a href='/marks.html' class="nav-link">Метки</a>
-                        <a href='/map.html' class="nav-link">Карта</a>
-                        <a href='/informants.html' class="nav-link">Информанты</a>
-                    </nav>
-                    <button class="btn btn-outline-success" id='btnShowMyFiles'>Мои файлы</button>
-                    <button class="btn btn-danger" id='btnDeleteFile' style="display: none;">Удалить</button>
-                    <div class="d-flex">
-                        <input id=srch class="form-control me-2" type="search" placeholder="Введите фразу" value=''>
-                        <button class="btn btn-success" onclick="startSearch()">Поиск</button>
-                    </div>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo01" aria-controls="navbarTogglerDemo01" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                      </button>
+                      <div class="collapse navbar-collapse" id="navbarTogglerDemo01">
 
-                    <div class="d-flex row">
-                        <div class="col" id='userName'>Пользователь</div>
-                        <button class="btn btn-secondary col" id="btnExit">Выйти</button>
-                    </div>
+                          <nav class="nav nav-tabs">
+                              <a href='/load.html' class="nav-link nav-item">Загрузка</a>
+                              <a href='/events.html' class="nav-link nav-item">События</a>
+                              <a href='/files.html' class="nav-link nav-item active">Файлы</a>
+                              <a href='/marks.html' class="nav-link nav-item">Метки</a>
+                              <a href='/map.html' class="nav-link nav-item">Карта</a>
+                              <a href='/informants.html' class="nav-link">Информанты</a>
+                          </nav>
+                          <button class="btn btn-outline-success" id='btnShowMyFiles'>Мои файлы</button>
+                          <button class="btn btn-danger" id='btnDeleteFile' style="display: none;">Удалить</button>
+                          <div class="d-flex">
+                              <input id=srch class="form-control me-2" type="search" placeholder="Введите фразу" value=''>
+                              <button class="btn btn-success" onclick="startSearch()">Поиск</button>
+                          </div>
+      
+                          <div class="d-flex row">
+                              <div class="col" id='userName'>Пользователь</div>
+                              <button class="btn btn-secondary col" id="btnExit">Выйти</button>
+                          </div>
+                      </div>
                 </div>
             </nav>
         </div>

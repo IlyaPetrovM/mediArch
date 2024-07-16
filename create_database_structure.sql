@@ -8,9 +8,11 @@
 CREATE TABLE IF NOT EXISTS `events` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `date_start` date DEFAULT NULL,
+  `date_start` date DEFAULT curdate(),
   `time_start` time DEFAULT NULL,
+  `gps_str` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `user_created` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `date_created` timestamp NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -41,6 +43,8 @@ CREATE TABLE IF NOT EXISTS `files` (
   `duration_ms` int(11) DEFAULT NULL,
   `gps_str` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `user_created` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` char(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `annotation` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`annotation`)),
   PRIMARY KEY (`id`),
   KEY `FK_to_events` (`event_id`),
   CONSTRAINT `FK_to_events` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`)
@@ -104,6 +108,22 @@ CREATE TABLE IF NOT EXISTS `marks` (
   FULLTEXT KEY `decription_of_file` (`describtion`),
   CONSTRAINT `marks_to_files_constr` FOREIGN KEY (`file_id`) REFERENCES `files` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `photo_marks` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '',
+  `rect_top` int(10) unsigned NOT NULL,
+  `rect_left` int(10) unsigned NOT NULL,
+  `rect_width` int(10) unsigned NOT NULL,
+  `rect_height` int(10) unsigned NOT NULL,
+  `inf_id` int(11) DEFAULT NULL,
+  `file_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FK_to_file` (`file_id`),
+  KEY `FK_to_inf` (`inf_id`),
+  CONSTRAINT `FK_to_file` FOREIGN KEY (`file_id`) REFERENCES `files` (`id`),
+  CONSTRAINT `FK_to_inf` FOREIGN KEY (`inf_id`) REFERENCES `informants` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DELIMITER //
 CREATE FUNCTION `getServerTimezone`() RETURNS char(6) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci

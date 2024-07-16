@@ -22,18 +22,23 @@ async function loadByChunks(file){
   const ost = file.size - (chunkSize * totalChunks);
   console.log(file.size / chunkSize )
   let startByte = 0;
+  try{
 
-  for(let i=1; i <= totalChunks; i++){
-    const endByte = Math.min( startByte + chunkSize, file.size );
-    const chunk = file.slice( startByte, endByte );
-    if(i == totalChunks) print('   соединяю файл воедино... подождите (здесь может долго висеть 100%)')
+    for(let i=1; i <= totalChunks; i++){
+      const endByte = Math.min( startByte + chunkSize, file.size );
+      const chunk = file.slice( startByte, endByte );
+      if(i == totalChunks) {
+        print('   соединяю файл воедино... подождите (здесь может долго висеть 100%)')
+      }
       await uploadChunk( chunk, totalChunks, i, file.name );
-    startByte = endByte;
-    progressOutput.value = Math.ceil((i / totalChunks) * 10000) / 100 + '%\t-->\t' + file.name + '\n';
-
-
+      startByte = endByte;
+      progressOutput.value = Math.ceil((i / totalChunks) * 10000) / 100 + '%\t-->\t' + file.name + '\n';
+    }
+    console.info('Upload complete')
+  }catch(err){
+    print('   ошибка (см консоль)')
+    console.error(err)
   }
-  console.info('Upload complete')
 
 }
 
@@ -63,6 +68,7 @@ async function uploadChunk(chunk, totalChunks, currnetChunk, filename){
 */
 function print(t) {
     filesReadyList.innerHTML = t + '\n' + filesReadyList.innerHTML;
+    console.info(t)
 }
 
 

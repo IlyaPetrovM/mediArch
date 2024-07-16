@@ -81,7 +81,24 @@ const ICON_TEXT = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16
 
 
 
-
+const tags = () => {
+  return [
+    'архитектура',
+    'архитектурный элемент',
+    'дрон',
+    'предметы',
+    'бэкстейдж',
+    'люди',
+    'интервью',
+    'документ',
+    'природа',
+    'животные',
+    'карта',
+    'зима',
+    'внешний архив',
+    'скан/пересъёмка/картина',
+  ].sort();
+};
 
 
 /**
@@ -99,8 +116,6 @@ const FORMAT_FILES_COLUMNS = [
     hozAlign: 'center',
   },
 
-
-
   //tags
   {
     title: 'Теги',
@@ -108,20 +123,18 @@ const FORMAT_FILES_COLUMNS = [
     editor: 'list',
     width: 100,
     hozAlign: 'center',
+    vertAlign: 'middle',
+    formatter: 'textarea',
+    headerFilterPlaceholder: 'Поиск',
+    headerFilter: 'list',
+    headerFilterFunc: 'like',
+    headerFilterParams: { values: tags(), sortValuesList: 'asc' },
     editorParams: {
-      autocomplete: 'true',
       allowEmpty: true,
       listOnEmpty: true,
-      values: [
-          'архитектура',
-          'бэкстейдж',
-        'портрет',
-        'интервью',
-        'документ',
-        'природа',
-        'животные',
-        'рабочие моменты',
-      ],
+      multiselect: true,
+      sortValuesList: 'asc',
+      values: tags(),
       freetext: false,
     },
     cellEdited: async function (cell) {
@@ -133,43 +146,33 @@ const FORMAT_FILES_COLUMNS = [
     },
   },
 
-
-
   {
-    field:'status',
-    title:'Удаление',
-    editor:'list',
-    visible:false,
-    width:80,
-    cellEdited:(cell)=>{
-      console.log(cell.getValue())
+    field: 'status',
+    title: 'Удаление',
+    editor: 'list',
+    visible: false,
+    width: 80,
+    cellEdited: (cell) => {
+      console.log(cell.getValue());
     },
     editorParams: {
       autocomplete: 'true',
       allowEmpty: true,
       listOnEmpty: true,
-      values: [
-          'на удаление',
-          'дубликат',
-          'битый файл',
-          'ок',
-      ],
+      values: ['на удаление', 'дубликат', 'битый файл', 'ок'],
       freetext: false,
     },
   },
 
-
-
-
-
   {
     field: 'description',
     title: 'Описание',
+    formatter: 'textarea',
+    width: 200,
+    vertAlign: 'middle',
+    headerFilter: 'input',
     headerWordWrap: true,
     editor: 'textarea',
-    width: 200,
-    formatter: 'textarea',
-    headerFilter: 'input',
     editorParams: {
       autocomplete: 'true',
       allowEmpty: true,
@@ -186,15 +189,13 @@ const FORMAT_FILES_COLUMNS = [
     },
   },
 
-
   {
     field: 'name',
     visible: false,
-    width:50,
-    hozAlign:'right',
+    width: 50,
+    hozAlign: 'right',
     headerWordWrap: true,
   },
-
 
   {
     field: 'event_id',
@@ -202,15 +203,20 @@ const FORMAT_FILES_COLUMNS = [
     headerFilter: 'input',
   },
 
-
-
   {
     field: 'event_title',
     title: 'Событие',
-    editor: 'list',
-    // formatter:(cell)=>{cell.style.whiteSpace = 'pre-wrap'; return `<small>  ${cell.getValue()} </small>`},
-    width:120,
-    headerFilter:'input',
+    width: 120, vertAlign:'middle',
+    headerFilter:'list',
+    headerFilterPlaceholder:'Поиск',
+    headerFilterParams:{
+      autocomplete: 'true',
+      allowEmpty: true,
+      listOnEmpty: true,
+      valuesLookup: true,
+      freetext: true,
+    },
+
     cellEdited: (cell) => {
       console.log('event_title');
       sql(
@@ -219,10 +225,11 @@ const FORMAT_FILES_COLUMNS = [
         }`
       ).then((res) => {
         res.errors
-          ? alert('Не могу добавть событие')
-          : console.log('событие ', cell.getValue());
+        ? alert('Не могу добавть событие')
+        : console.log('событие ', cell.getValue());
       });
     },
+    editor: 'list',
     editorParams: {
       clearable: true,
       listOnEmpty: true,
@@ -232,7 +239,9 @@ const FORMAT_FILES_COLUMNS = [
         const res = await sql(
           `SELECT * FROM events ORDER BY date_start DESC, id DESC`
         );
-        const eventsList = [{value:null, label: '[ Открепить файл от события ]'}];
+        const eventsList = [
+          { value: null, label: '[ Открепить файл от события ]' },
+        ];
         // })
         // for (let i in res.data) {
         res.data.forEach((evt) => {
@@ -256,20 +265,17 @@ const FORMAT_FILES_COLUMNS = [
     headerFilter: 'input',
   },
 
-
   {
     title: 'Имя файла',
     field: 'oldName',
-    hozAlign:'right',
-    vertAlign:'middle',
+    hozAlign: 'right',
+    vertAlign: 'middle',
     // formatter: 'textarea',
     // visible: false,
-    width:80,
+    width: 80,
     headerWordWrap: true,
     headerFilter: 'input',
   },
-
-
 
   //recognizedText
   {
@@ -287,8 +293,6 @@ const FORMAT_FILES_COLUMNS = [
     },
   },
 
-
-
   //'recognitionStatus'
   {
     // TODO добавить возможность "заказывать" распознавание и разрывать сессию
@@ -305,14 +309,12 @@ const FORMAT_FILES_COLUMNS = [
     },
   },
 
-
-
   //fileType
   {
     title: 'Тип',
     field: 'fileType',
     // visible: false,
-    headerMenu:headerMenu,
+    headerMenu: headerMenu,
     editor: 'list',
     hozAlign: 'center',
     editorParams: {
@@ -332,22 +334,23 @@ const FORMAT_FILES_COLUMNS = [
     },
   },
 
-
-
   {
     field: 'play',
-    width:20, hozAlign: 'center', vertAlign:'middle',
-    formatter: () => {return ICON_PLAY;},
+    width: 20,
+    hozAlign: 'center',
+    vertAlign: 'middle',
+    formatter: () => {
+      return ICON_PLAY;
+    },
     headerMenu: headerMenu,
     cellClick: function (e, cell) {
       playFile(e, cell.getRow().getData().name, true);
     },
   },
 
-
-
-  {field: 'marks',
-    headerMenu:headerMenu,
+  {
+    field: 'marks',
+    headerMenu: headerMenu,
     formatter: (cell) => {
       if (
         cell.getRow().getData().fileType == 'audio' ||
@@ -359,22 +362,22 @@ const FORMAT_FILES_COLUMNS = [
       else return '';
     },
     width: 20,
-    hozAlign: 'center'},
+    hozAlign: 'center',
+  },
 
-
-
-  {title: 'Просмотр',
+  {
+    title: 'Просмотр',
     field: 'view',
-    width: 80, hozAlign: 'center', vertAlign:'middle',
+    width: 80,
+    hozAlign: 'center',
+    vertAlign: 'middle',
     headerMenu: headerMenu,
     formatter: function (cell) {
       return `<img alt=':(' src='${
-        UPLOAD_PATH  +  cell.getRow().getData().name
+        UPLOAD_PATH + cell.getRow().getData().name
       }' class='previewImage'>`;
     },
   },
-
-
 
   //download
   {
@@ -391,8 +394,6 @@ const FORMAT_FILES_COLUMNS = [
       downloadFile(e, UPLOAD_PATH + cell.getRow().getData().name);
     },
   },
-
-
 
   //date_created_GMT
   {
@@ -412,7 +413,6 @@ const FORMAT_FILES_COLUMNS = [
       else return '';
     },
   },
-
 
   //date_upload
   {
@@ -436,8 +436,6 @@ const FORMAT_FILES_COLUMNS = [
     },
   },
 
-
-
   //date_upload_timezone
   {
     title: 'Часовой пояс даты загрузки',
@@ -446,8 +444,6 @@ const FORMAT_FILES_COLUMNS = [
     width: 60,
     headerWordWrap: true,
   },
-
-
 
   //date_updated
   {
@@ -466,7 +462,6 @@ const FORMAT_FILES_COLUMNS = [
     },
   },
 
-
   //date_updated_timezone
   {
     title: 'Часовой пояс даты обновления',
@@ -475,7 +470,6 @@ const FORMAT_FILES_COLUMNS = [
     headerWordWrap: true,
     // width:     60,
   },
-
 
   //gps_str
   {
@@ -487,7 +481,6 @@ const FORMAT_FILES_COLUMNS = [
     width: 80,
   },
 
-
   //date_updated_timezone
   {
     title: 'Часовой пояс даты обновления',
@@ -496,7 +489,6 @@ const FORMAT_FILES_COLUMNS = [
     headerWordWrap: true,
     // width:     60,
   },
-
 
   //fileExt
   {
@@ -508,16 +500,25 @@ const FORMAT_FILES_COLUMNS = [
     hozAlign: 'center',
   },
 
-
   //informants
   {
     title: 'Люди',
     field: 'informants',
-    // headerFilter:'input',
-    // width: 120,
+    headerFilter:'input',
+    headerFilterFunc:(headerValue, rowValue, rowData, filterParams)=>{
+      console.log(rowValue[0].first_name.search(headerValue));
+      return rowValue.length > 0 && String(rowValue[0].first_name).includes(headerValue)
+    },
+    // headerFilterParams:{
+    //   // valuesLookup:true,
+    // },
+    vertAlign:'middle',
+    formatter: formatInformantList,
+    
     cellClick: (e, cell) => {
       editorInformants(cell);
     },
+
     mutator: (value, data, type, params, component) => {
       if (type == 'data') {
         const informants = JSON.parse(value);
@@ -526,9 +527,7 @@ const FORMAT_FILES_COLUMNS = [
       }
       return value;
     },
-    formatter: formatInformantList,
   },
-
 
   {
     field: 'deviceModel',

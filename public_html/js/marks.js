@@ -15,14 +15,77 @@ const QUERY_MARKS = `SELECT  m.id,
                             recognition1,
                             recognition2,
                             hide,
-                            file_id
-                        FROM marks m `;
+                            file_id,
+                            f.oldName AS file_name,
+                            e.title AS event_title
+                        FROM marks m
+                        LEFT JOIN files AS f ON f.id = file_id
+                        LEFT JOIN events AS e ON e.id = f.event_id `;
 let where = ` WHERE file_id = ${FILE_ID} and hide <> 1 ORDER BY time_msec ASC`;
 if(!FILE_ID) {
     where = 'WHERE  hide <> 1 ORDER BY file_id ASC, time_msec ASC'
     btnAddRow.disabled = true;
 }
 
+const tags = () => {
+    return [
+        'Кино',
+
+        'Генеалогия',
+
+        'Праздники',
+        
+        'Война',
+
+        'Раскулачивание',
+        
+        'Семейные традиции',
+        
+        'Детство',
+        
+        'Игры',
+        'Фольклорный текст',
+        
+        'Художники в Чусовом',
+
+        'Детский сад',
+        'Дом культуры',
+        'Библиотека',
+        'Музея история',
+        'Школа',
+        'Завод',
+        'Больница - ФАП - Госпиталь',
+        'Колхоз',
+
+        'Карта и топонимика',
+        'Диалектный словарь',
+
+        'Предметы быта',
+        
+        'Скотоводство',
+        'Пчеловодство',
+        
+        'Хор',
+        
+        'Окказиональная обрядность',
+        'Свадьба',
+        'Похороны',
+
+        'Кулинария',
+        
+        'Рыбалка',
+        'Охота',
+
+        'Староверы',
+        'Церковь',
+        
+        'Плетение из ивовой лозы',
+
+        'Архитектура',
+
+        'Медицина',
+    ].sort()
+  };
 
 const FORMAT_MARKS_COLUMNS = [   
     {
@@ -39,7 +102,41 @@ const FORMAT_MARKS_COLUMNS = [
         visible: false
     },
     {
+        title:'Темы',
         field: 'tags',
+        width: 100,
+        editor:'list',
+        hozAlign: 'center',
+        vertAlign: 'middle',
+        formatter: 'textarea',
+        headerFilterPlaceholder: 'Поиск',
+        headerFilter: 'list',
+        headerFilterFunc: 'like',
+        headerFilterParams: { values: tags(), sortValuesList: 'asc', autocomplete: true,listOnEmpty: true,},
+        editorParams: {
+            // autocomplete: 'true',
+            allowEmpty: true,
+            // listOnEmpty: true,
+            multiselect: true,
+            sortValuesList: 'asc',
+            values: tags(),
+            freetext: false,
+          },
+          cellEdited:async(cell)=>{
+            cell.getElement().style.whiteSpace = "pre-wrap";
+            let edit_result = await sql(
+                `UPDATE marks SET tags = '${cell.getValue()}' WHERE id = ${cell.getRow().getData().id}`)
+            if (edit_result.errors) {alert('Ошибка при сохранении описания метки в БД')}
+          }
+        // visible:false
+    },
+    {
+        field: 'file_name',
+        visible:false
+    },
+    {
+        title: 'Событие',
+        field: 'event_title',
         visible:false
     },
     {
@@ -70,9 +167,11 @@ const FORMAT_MARKS_COLUMNS = [
     },
     {
         field: 'describtion',
+        title:'Описание',
         editor: 'input',
         formatter:'textarea',
         headerFilter:'input',
+        headerFilterPlaceholder:'Поиск',
         cellEdited: async function(cell){
             cell.getElement().style.whiteSpace = "pre-wrap";
             let edit_result = await sql(
@@ -154,6 +253,7 @@ async function runMarks(){
     var table = new Tabulator("#marksTable", {
         height:"calc(100vh - 64px)",
         layout: "fitColumns",
+        groupBy:["event_title", 'file_name'],
         placeholder: "Введите поисковую фразу",
         ajaxContentType: "json",
         layout: "fitColumns",

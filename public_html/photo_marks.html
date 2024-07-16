@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <!-- Annotatorious -->
+  <script type="text/javascript" src="js/imported/annotorious.min.js"></script>
+  <link rel="stylesheet" href="style/imported/annotorious.min.css">
+
+    <!-- Bootstrap -->
+    <link href="style/imported/google_material_icons.css" rel="stylesheet">
+    <link href="style/imported/bootstrap.min.css" rel="stylesheet" >
+    
+    
+    <!-- Tabulator -->
+    <link  href="style/imported/tabulator.min.css" rel="stylesheet">
+    <script src="js/imported/tabulator.min.js" type="text/javascript" ></script>
+    <script src="js/imported/luxon.min.js" type="text/javascript"></script>
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    
+    <!-- Local Styles -->
+    <link  href="style/marks.css" rel="stylesheet">
+<style>
+        #imageContainer {
+            position: relative;
+            display: inline-block;
+        }
+
+        #previewImg {
+            display: block;
+            /* width: 400px; Замените на ширину вашего изображения */
+        }
+
+        .markingRectangle {
+            position: absolute;
+            border: 2px solid rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+        }
+</style>
+
+</head>
+<body> 
+<div class="container-fluid">
+      <div class=row>
+          <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+              <nav class="nav nav-tabs">
+                <a href='/load.html' class="nav-link">Загрузка</a>
+                <a href='/events.html' class="nav-link">События</a>
+                <a href='/files.html' class="nav-link">Файлы</a>
+                <a href='/marks.html' class="nav-link">Метки</a>
+                <a href='/marks.html' class="nav-link active">Фотометки</a>
+                <a href='/map.html' class="nav-link">Карта</a>
+                <a href='/informants.html' class="nav-link">Информанты</a>
+              </nav>
+
+              <button id='addMark' class="btn btn-danger"> Метка (Alt+M)</button>
+              <button id="saveMark">Save Mark</button>
+
+              <code>
+              <h4 id=timeMonitor>  
+                  00:00:00.000 
+                </h4>
+              </code>
+              <a class="navbar-brand" id='fileNameLogo'>Архив экспедиции - Опись</a>
+            </div>
+          </nav>
+       </div>
+       <div class=row>
+           <!------------------------     
+                Просмотрщик       
+            -------------------------->
+            <div class="col-sm-6 order-sm-last">
+               
+              <div id="imageContainer">
+                <img hidden id=previewImg style="width:100%;" class="embed-responsive embed-responsive-16by9" />
+                <div id="markingContainer"></div>
+              </div>
+               <video hidden id=previewVideo style="width:100%;" class="embed-responsive embed-responsive-16by9" controls></video>
+               <iframe hidden id=previewIframe style="width:100%; height:100%;" class="embed-responsive embed-responsive-16by9" ></iframe>
+                
+            </div>
+           
+            
+           
+           <!-----------------------
+                    ТАБЛИЦА   
+            ------------------------->
+            <div class="col-sm-6 ">
+               <div id="marksTable" ></div>
+            </div>
+         </div>
+    </div>
+</body>
+    <script src='js/sql.js' ></script>
+    <script src='js/player.js' ></script>
+    <script src='js/photo_marks.js'></script>
+
+    
+</html>
