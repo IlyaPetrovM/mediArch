@@ -54,13 +54,15 @@
             <!-- </div> -->
             <h4> 2. Выберите файлы </h4>
             <input class='form-control' type="file" name="many_files" id='filesInput' multiple>
+            <div><input type="checkbox"  id="passRepeatedFilesBox"/> Пропускать уже загруженные файлы</div>
+            <!-- <div><input type="checkbox"  id="addDbRecordBox"/> Принудительно добавить запись в архиве для уже загруженных файлов</div> -->
+            <div><input type="checkbox" checked  id="useCacheCheckbox"/> Использовать уже загруженные кусочки файла</div>
             <button id='uploadButton' class='btn  btn-primary'> Загрузить </button>
             <br>
             <input class='form-control' id='progressOutput' type=text size=80 readonly/>
             <br>
             <textarea  class='form-control' id='filesReadyList' rows=20 cols=80 readonly>Список загруженных файлов</textarea>
             <br>
-            <div><input type="checkbox" checked  id="useCacheCheckbox"/> Использовать уже загруженные части файла</div>
         </form>
             <div class='col'>
 

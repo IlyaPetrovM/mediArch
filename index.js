@@ -178,6 +178,7 @@ app.get('/api/file/size', (req, res)=>{
         const stats = fs.statSync(filepath);
         const fileSizeInBytes = stats.size;
         console.log('size: ', fileSizeInBytes);
+
         res.send(JSON.stringify({fileSizeInBytes: fileSizeInBytes}));
     }catch(err){
         res.send('0');

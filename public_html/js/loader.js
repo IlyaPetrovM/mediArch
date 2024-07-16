@@ -51,6 +51,11 @@ function getHash(file) {
 
 useCacheCheckbox.addEventListener('click', (e)=>{
   const useCache = e.target.checked;
+  if(!useCache){
+    const yes = confirm('Вы уверены? Скорость загрузки может увеличиться.')
+    if(!yes){
+      e.target.checked = true;
+    }}
   console.log(useCache);
 })
 
@@ -156,7 +161,13 @@ function print(t) {
 }
 
 
-
+async function recordExists(filename){
+  const res = await sql(`SELECT id FROM files WHERE oldName like '${filename}' `);
+  console.log('db record', res.data, 'recordExists: ', res.data.length > 0);
+  if(res.errors) return false;
+  
+  return res.data.length > 0;
+}
 
 /** 
 Загрузка
@@ -165,29 +176,53 @@ function print(t) {
 */
 async function load() {
   let files = filesInput.files;
-
-
-
   print('-- ЗАГРУЖАЕМ --');
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    let ID;
+    let file_id;
     try {
+      let doLoad = true;
+      let doSaveToDb = true;
 
-    
-      print(`.Размер файла : ${file.size} - у вас`);
+      print(`../Размер файла : ${file.size} - у вас           \\`);
       let remoteFileSize = await getRemoteFileSize(file.name);
-      print(`.Размер файла : ${remoteFileSize} - на сервере`);
-      let ans = false;
-      if(file.size === remoteFileSize) {
-        ans = confirm('Загрузить повторно? (совпадают размеры файлов у вас и на сервере) ')
-        if(!ans) continue;
+      print(`..\\Размер файла : ${remoteFileSize} - на сервере /`);
+      const fileExists = (file.size === remoteFileSize);
+
+      const recExists = await recordExists(file.name);
+
+      const forceLoad = !passRepeatedFilesBox.checked;
+      // const forceSaveToDb = addDbRecordBox.checked;
+      /**
+      Варианты:
+                                  doLoad        doDbRecord
+          1. Файл не найден =>     Грузим,      Добавляем запись в БД 
+
+          2. Файл найден    =>     Грузим,      Добавляем запись в БД (полное дублирование записи)
+          3. Файл найден    =>  Не грузим,      Добавляем запись в БД (файл загружен другим способом)
+          4. Файл найден    =>  Не Грузим,   Не Добавляем запись в БД (пропускаем повторы)
+          5. Файл найден    =>     Грузим,   Не Добавляем запись в БД (обновить файл в архиве)
+       */
+      
+      if(recExists){
+        doSaveToDb = false
       }
 
-      await loadByChunks(file)
-      ID = await saveToBD(file.name, transliterate(file.name),user_created );
+      if(fileExists) {
+        console.log('forceLoad: ', forceLoad)
+        doLoad = forceLoad && confirm(`Загрузить повторно? для ${file.name} совпадают размер у вас и в архиве) `)
+      }
 
+      if(doLoad) {
+        await loadByChunks(file)
+      }
+
+      if(doSaveToDb){ // doLoad ==> saveToDb;  notLoad ==> not save
+            file_id = await saveToBD(file.name, transliterate(file.name), user_created );
+      }else{
+        continue;
+      }
       
     } catch (e) {
       console.error(e);
@@ -201,7 +236,7 @@ async function load() {
       let deviceModel = (exif.Make) ? (exif.Make + '_' + exif.Model) : null;
 
       const res = await sql(
-        `UPDATE files SET gps_str = '${gps}', deviceModel = '${deviceModel}'  WHERE id = ${ID}`
+        `UPDATE files SET gps_str = '${gps}', deviceModel = '${deviceModel}'  WHERE id = ${file_id}`
       );
       if (res.errors) {
         throw new Error(JSON.stringify(res.errors));
@@ -217,31 +252,33 @@ async function load() {
 
 
 
-            // const fext = getUrlExtention(file.name)
-            // const ftype = getFileType(fext)
-            // const event_id = selectEvents.value ? selectEvents.value : undefined;
-            // const user_created = USERNAME;
+// const fext = getUrlExtention(file.name)
+// const ftype = getFileType(fext)
+// const event_id = selectEvents.value ? selectEvents.value : undefined;
+// const user_created = USERNAME;
 
-            // print(`... читаем exif-информацию файла ...`)
-            // // let exif = undefined;
-            // let exif_str = JSON.stringify(exif);
-    
-            // // print(`... читаем мета-информацию видео ...`)
-            // const avmeta = undefined;
-            // // const avmeta = await getAVmetadata(files[i]);
-            // // if (exif_str.length == 2) exif_str = JSON.stringify(avmeta)
-            // let  {dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL} = getDateCreation(files[i], exif, avmeta);
-            // console.log({dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL});
+// print(`... читаем exif-информацию файла ...`)
+// // let exif = undefined;
+// let exif_str = JSON.stringify(exif);
 
-            //             'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str'],
-            //     [ ,
-            //         USERNAME, 
-            //         files[i].name, transliterate(files[i].name), fext, ftype, dateCreatedUTC,
-            //      dateCreatedLOCAL,
-            //      dateUpdatedLOCAL,  // Может врать! В видео записыватся UTC, а в телефоне, например локальное время!
-            //      deviceModel,
-            //      gps
-            //      ]]);
+// // print(`... читаем мета-информацию видео ...`)
+// const avmeta = undefined;
+// // const avmeta = await getAVmetadata(files[i]);
+// // if (exif_str.length == 2) exif_str = JSON.stringify(avmeta)
+// let  {dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL} = getDateCreation(files[i], exif, avmeta);
+// console.log({dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL});
+
+//             'file_created_UTC', 'file_created_LOCAL','file_updated_LOCAL', 'deviceModel', 'gps_str'],
+//     [ ,
+//         USERNAME, 
+//         files[i].name, transliterate(files[i].name), fext, ftype, dateCreatedUTC,
+//      dateCreatedLOCAL,
+//      dateUpdatedLOCAL,  // Может врать! В видео записыватся UTC, а в телефоне, например локальное время!
+//      deviceModel,
+//      gps
+//      ]]);
+
+
 
 /**
  * Сохраняет в БД самую необходимую инфу о загруженом файле
@@ -267,6 +304,9 @@ async function saveToBD(oldName, name, user_created) {
     print(`OK - ${oldName} - Сохранён в базе под id ${ID}`);
     return ID ;
 }
+
+
+
 /**
  * Загружает один файл на сервер постепенно
  * @param {File} file 
@@ -281,6 +321,9 @@ async function loadOne(file) {
     print(`OK - ${file.name} - загружен на сервер ...`);
     return res;
 }
+
+
+
 
 /**
  * @brief Определяет дату создания файла по различным признакам
@@ -318,6 +361,13 @@ function getDateCreation(file, exif, avmeta) {
     return { dateCreatedUTC, dateCreatedLOCAL, dateUpdatedLOCAL };
   }
 }
+
+
+/**
+ * Определить дату на основе EXIF данных
+ * @param {Object} exif 
+ * @returns 
+ */
 function getGPSdate(exif){
     try{
     if(exif === undefined) return;
