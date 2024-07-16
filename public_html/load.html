@@ -59,6 +59,8 @@
             <input class='form-control' id='progressOutput' type=text size=80 readonly/>
             <br>
             <textarea  class='form-control' id='filesReadyList' rows=20 cols=80 readonly>Список загруженных файлов</textarea>
+            <br>
+            <div><input type="checkbox" checked  id="useCacheCheckbox"/> Использовать уже загруженные части файла</div>
         </form>
             <div class='col'>
 
@@ -67,6 +69,7 @@
     </div>
 </body>
 <script src='js/imported/exif-js.js'></script>
+<script src='js/imported/crypto-js.min.js'></script>
 <script src='js/imported/luxon.min.js'></script>
 <script src='js/imported/mediainfo.js/index.min.js'></script>
 <script src='js/sql.js'></script>

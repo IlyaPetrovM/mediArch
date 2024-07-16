@@ -30,11 +30,56 @@ async function checkChunk(totalChunks, currnetChunk, filename, chunkSize) {
   return JSON.parse(ans);
 }
 
-uploadButton.addEventListener('click', async() =>{
-  await checkChunk(1,1, 'C0081.MP4', 500);
+function getHash(file) {
+  print('Вычисляю контрольную сумму...');
+  return new Promise((resolve, reject) => {
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const fileData = event.target.result;
+        const hash = CryptoJS.SHA256(fileData).toString();
+        
+        resolve(hash);
+      };
+      reader.readAsArrayBuffer(file);
+
+    } else {
+      reject(undefined);
+    }
+  });
+}
+
+useCacheCheckbox.addEventListener('click', (e)=>{
+  const useCache = e.target.checked;
+  console.log(useCache);
 })
 
+/**
+ * 
+ * @param {String} filename 
+ * @returns 
+ */
+async function getHashFromServer(filename){
+  const res = await fetch('/api/file/hash?' + new URLSearchParams({
+    filename:filename
+  }) );
+  console.log(res)
+  const hash_on_server = await res.json();
+  console.log('Server hash: ', hash_on_server)
+  // return 
+  return JSON.parse(hash_on_server);
+}
 
+
+async function getRemoteFileSize(filename){
+  const res = await fetch('/api/file/size?' + new URLSearchParams({
+    filename:filename
+  }) );
+  console.log(res)
+  const {fileSizeInBytes} = await res.json();
+  console.log('Remote size: ', fileSizeInBytes)
+  return fileSizeInBytes;
+}
 
 /**
  * Загружает один файл, разделяя его на отдельные чанки
@@ -51,15 +96,20 @@ async function loadByChunks(file){
   const ost = file.size - (chunkSize * totalChunks);
   console.log(file.size / chunkSize )
   let startByte = 0;
+  let hash = '';
+  
   try{
-
     for(let i=1; i <= totalChunks; i++){
       const endByte = Math.min( startByte + chunkSize, file.size );
       const chunk = file.slice( startByte, endByte );
       if(i == totalChunks) {
         print('   соединяю файл воедино... подождите (здесь может долго висеть 100%)')
       }
-      const chunkExist = await checkChunk(totalChunks, i, file.name, chunkSize);
+      
+      const useCache = useCacheCheckbox.checked;
+      let chunkExist = false;
+      if(useCache) chunkExist = await checkChunk(totalChunks, i, file.name, chunkSize);
+
       if(chunkExist){
         print(`Часть файла ${file.name}.${i} уже есть сервере! -- не гружу её`)
       }else{
@@ -124,12 +174,21 @@ async function load() {
     const file = files[i];
     let ID;
     try {
+
+    
+      print(`.Размер файла : ${file.size} - у вас`);
+      let remoteFileSize = await getRemoteFileSize(file.name);
+      print(`.Размер файла : ${remoteFileSize} - на сервере`);
+      let ans = false;
+      if(file.size === remoteFileSize) {
+        ans = confirm('Загрузить повторно? (совпадают размеры файлов у вас и на сервере) ')
+        if(!ans) continue;
+      }
+
       await loadByChunks(file)
-      ID = await saveToBD(
-        file.name,
-        transliterate(file.name),
-        user_created
-      );
+      ID = await saveToBD(file.name, transliterate(file.name),user_created );
+
+      
     } catch (e) {
       console.error(e);
       print(`ERR - ${file.name} - Ошибка загрузки файла`);

@@ -21,7 +21,6 @@ const session = require('express-session')
 const crypto = require('crypto')
 
 
-
 const config  = require('./config')
 const users  = require('./users')
 const recognizeAudio = require('./recognizeAudio');
@@ -158,6 +157,43 @@ app.post('/api/upload', function(req, res) {
 });
 
 
+
+
+/**
+ * 
+ * @param {String} filePath 
+ * @returns 
+ */
+function calculateHash(filePath) {
+    const fileData = fs.readFileSync(filePath);
+    const hash = crypto.createHash('sha256').update(fileData).digest('hex');
+    return hash;
+}
+
+app.get('/api/file/size', (req, res)=>{
+    const { filename } = req.query;
+    const filepath = config.UPLOAD_PATH + filename;
+    console.log('file: ', filepath);
+    try{
+        const stats = fs.statSync(filepath);
+        const fileSizeInBytes = stats.size;
+        console.log('size: ', fileSizeInBytes);
+        res.send(JSON.stringify({fileSizeInBytes: fileSizeInBytes}));
+    }catch(err){
+        res.send('0');
+        console.error(err);
+    }
+});
+
+
+app.get('/api/file/hash', (req, res)=>{
+    const { filename } = req.query;
+    const filepath = config.UPLOAD_PATH + filename;
+    const hash = calculateHash(filepath)
+    console.log('file: ', filepath);
+    console.log('hash: ', hash)
+    res.send(String(hash));
+});
 
 
 /**
