@@ -15,7 +15,36 @@ fetch('/api/session/username', {
     user_created = json.data;
 })
 
+async function checkChunk(totalChunks, currnetChunk, filename, chunkSize) {
+  const res = await fetch(
+    '/api/upload/chunk/isLoaded?'+
+    new URLSearchParams({
+      totalChunks: totalChunks,
+      currnetChunk: currnetChunk,
+      filename: filename,
+      chunkSize:chunkSize
+    }).toString()
+  );
+  let ans = await res.json();
+    console.log(ans)
+  return JSON.parse(ans);
+}
+
+uploadButton.addEventListener('click', async() =>{
+  await checkChunk(1,1, 'C0081.MP4', 500);
+})
+
+
+
+/**
+ * Загружает один файл, разделяя его на отдельные чанки
+ * @param {FileObject} file 
+ */
 async function loadByChunks(file){
+
+  // Проверить, существует ли уже такой чанк на сервере
+
+
   // console.log(file, typeof(file))
   const chunkSize = 1024 * 1024 * 10; //10 MB
   const totalChunks = Math.ceil(file.size / chunkSize)+1;
@@ -30,7 +59,12 @@ async function loadByChunks(file){
       if(i == totalChunks) {
         print('   соединяю файл воедино... подождите (здесь может долго висеть 100%)')
       }
-      await uploadChunk( chunk, totalChunks, i, file.name );
+      const chunkExist = await checkChunk(totalChunks, i, file.name, chunkSize);
+      if(chunkExist){
+        print(`Часть файла ${file.name}.${i} уже есть сервере! -- не гружу её`)
+      }else{
+        await uploadChunk( chunk, totalChunks, i, file.name );
+      }
       startByte = endByte;
       progressOutput.value = Math.ceil((i / totalChunks) * 10000) / 100 + '%\t-->\t' + file.name + '\n';
     }
@@ -81,6 +115,9 @@ function print(t) {
 */
 async function load() {
   let files = filesInput.files;
+
+
+
   print('-- ЗАГРУЖАЕМ --');
 
   for (let i = 0; i < files.length; i++) {
@@ -482,7 +519,7 @@ sql('SELECT curtime() as t').then(res => {
 function addEventsToList(){
     sql(`SELECT * FROM events ORDER BY id DESC, date_start DESC`).then(res => {
         if(res.errors) return;
-        console.log(res.data)
+        // console.log(res.data)
         const x = document.getElementById('selectEvents');
         const option = document.createElement('option');
         option.text = '';

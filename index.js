@@ -1,6 +1,10 @@
 /**
    Настройки
 */
+// export NODE_OPTIONS=--max-old-space-size=4096;
+
+const v8 = require('v8');
+v8.setFlagsFromString('--max-old-space-size=4096');
 
 const express = require('express');
 const mysql = require('mysql')
@@ -110,6 +114,7 @@ app.post('/api/session/end', (req, res)=>{
 // const upload = multer({ storage:storage })
 const CHUNKS_DIR = config.CHUNKS_DIR;
 
+// app.use('/uploads', express.static(CHUNKS_DIR));
 
 
 
@@ -155,8 +160,24 @@ app.post('/api/upload', function(req, res) {
 
 
 
+/**
+ * Клиент может проверить, существует ли чанк на сервере
+ */
+app.get('/api/upload/chunk/isLoaded/', (req, res)=>{
 
 
+    const { query:{totalChunks, currnetChunk, filename} } = req;
+    filenameLatin = transliterate(filename)
+    const chunkFileName = `${filenameLatin}.${currnetChunk}`;
+    const chunkPath = `${CHUNKS_DIR}/${chunkFileName}`;
+    
+    console.log(chunkPath);
+    if(fs.existsSync(chunkPath)){
+        res.send('true');
+    }else{
+        res.send('false');
+    }
+})
 
 
 

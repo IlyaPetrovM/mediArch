@@ -26,3 +26,8 @@
 #viewer{
     /* width: 50vw; */
 }
+
+#filesReadyList{
+    font-size: small;
+    font-family: 'Courier New', Courier, monospace;
+}
