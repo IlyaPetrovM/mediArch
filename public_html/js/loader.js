@@ -184,10 +184,11 @@ async function load() {
     try {
       let doLoad = true;
       let doSaveToDb = true;
-
-      print(`../Размер файла : ${file.size} - у вас           \\`);
-      let remoteFileSize = await getRemoteFileSize(file.name);
-      print(`..\\Размер файла : ${remoteFileSize} - на сервере /`);
+      print(`  |____________________________________\t|`);
+      print(`  | Размер файла : ${file.size} - у вас\t|`);
+      let remoteFileSize = await getRemoteFileSize(transliterate(file.name));
+      print(`  | Размер файла : ${remoteFileSize} - на сервере\t|`);
+      print(`  _________________________________________________`);
       const fileExists = (file.size === remoteFileSize);
 
       const recExists = await recordExists(file.name);
