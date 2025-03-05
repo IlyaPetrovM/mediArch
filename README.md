@@ -1,5 +1,5 @@
 # mediArch
-1. Скачать zip
+1. Скачать и распаковать zip
 2. Запустить скрипт `create_database_structure.sql` на вашем MySQL-сервере
 3. Окрыть корень папки проекта. 
 4. Ввести `npm install`
