@@ -14,3 +14,4 @@ errors.txt
 temp/*
 assembledChunks/*
 chunks/*
+package-lock.json
