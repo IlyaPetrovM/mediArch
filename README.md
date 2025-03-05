@@ -1,6 +1,6 @@
 # mediArch
 1. Скачать zip
-2. Запустить код sql на вашем MySQL-сервере
+2. Запустить скрипт `create_database_structure.sql` на вашем MySQL-сервере
 3. Окрыть корень папки проекта. 
 4. Ввести `npm install`
 5. Ввести команду в консоли `node index`
