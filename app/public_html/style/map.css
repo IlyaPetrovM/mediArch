@@ -1,0 +1,16 @@
+#map {
+  width: 100%;
+  height: calc(100vh - 64px);
+}
+
+.previewImage{
+  height: 100%;
+}
+
+.tags {
+  display: inline-block;
+}
+
+.tags::after{
+  content: ";";
+}

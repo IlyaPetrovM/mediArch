@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+
+    <link href="style/imported/google_material_icons.css" rel="stylesheet">
+    <link href="style/imported/bootstrap.min.css" rel="stylesheet">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="style/files.css" rel="stylesheet">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <!-- <link rel="manifest" href="/site.webmanifest"> -->
+</head>
+
+<body>
+    <!-- Панель навигации -->
+    <div class='container-fluid'>
+        <div class=row>
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container-fluid">
+                    
+                    <nav class="nav nav-tabs">
+                        <a href='/load.html' class="nav-link active">Загрузка</a>
+                        <a href='/events.html' class="nav-link">События</a>
+                        <a href='/files.html' class="nav-link">Файлы</a>
+                        <a href='/marks.html' class="nav-link">Метки</a>
+                        <a href='/map.html' class="nav-link">Карта</a>
+                        <a href='/informants.html' class="nav-link">Информанты</a>
+                    </nav>
+                    <a class="navbar-brand">Архив экспедиции - Загрузка файлов</a>
+
+                </div>
+            </nav>
+        </div>
+
+        <div class='row'>
+            <div class='col'>
+                <time id="serverTime">00:00:00</time> сервер
+                <br>
+                <time id="browserTime">00:00:00</time> ваше время               
+            </div>
+        <form class='col-lg row g-3' method='POST' action='/api/upload' enctype='multipart/form-data' id='loaderForm'>
+            <h4> 1. Выберите событие, к которому относятся файлы </h4>
+            <!-- <div class=""> -->
+                <select id="selectEvents" class='form-control ' ></select> 
+                <!-- Нет события?
+                <a href="/events.html" class="btn btn-secondary " id='buttonAddEvent'>Добавить событие</a> -->
+            <!-- </div> -->
+            <h4> 2. Выберите файлы </h4>
+            <input class='form-control' type="file" name="many_files" id='filesInput' multiple>
+            <div><input type="checkbox"  id="passRepeatedFilesBox"/> Пропускать уже загруженные файлы</div>
+            <!-- <div><input type="checkbox"  id="addDbRecordBox"/> Принудительно добавить запись в архиве для уже загруженных файлов</div> -->
+            <div><input type="checkbox" checked  id="useCacheCheckbox"/> Использовать уже загруженные кусочки файла</div>
+            <button id='uploadButton' class='btn  btn-primary'> Загрузить </button>
+            <br>
+            <input class='form-control' id='progressOutput' type=text size=80 readonly/>
+            <br>
+            <textarea  class='form-control' id='filesReadyList' rows=20 cols=80 readonly>Список загруженных файлов</textarea>
+            <br>
+        </form>
+            <div class='col'>
+
+            </div>
+        </div>
+    </div>
+</body>
+<script src='js/imported/exif-js.js'></script>
+<script src='js/imported/crypto-js.min.js'></script>
+<script src='js/imported/luxon.min.js'></script>
+<script src='js/imported/mediainfo.js/index.min.js'></script>
+<script src='js/sql.js'></script>
+<script src='js/loader.js'></script>
+</html>
