@@ -399,7 +399,7 @@ app.post('/api/transcription/start', async (req, res) => {
             }
 
             const filename = results[0].name;
-            const fileUrl = config.FILE_STORAGE_URL + '/' + filename;
+            const fileUrl = config.FILE_STORAGE_URL + '/api/files/' + filename;
 
             const payload = {
                 file_id: file_id,
