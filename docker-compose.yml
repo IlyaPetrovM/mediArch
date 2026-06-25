@@ -1,5 +1,6 @@
 services:
   mediarch:
+    container_name: mediArch
     build: .
     image: mediarch:0.2.0
     ports:
@@ -13,16 +14,17 @@ services:
       - DB_USER=mediarch_user
       - DB_PASSWORD=mediarch_password
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     volumes:
       - ./app:/app
       - /app/node_modules
-      - ./storage/mediarch/uploads:/app/public_html/uploads
+      - ./storage/shared_storage:/app/public_html/uploads
       - ./storage/mediarch/upload_parts:/app/public_html/upload_parts
     networks:
       - mediarch_network
-
   mariadb:
+    container_name: db
     image: mariadb:10.9
     restart: always
     environment:
@@ -31,13 +33,146 @@ services:
       MYSQL_USER: mediarch_user
       MYSQL_PASSWORD: mediarch_password
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
       - ./init-db/create_database_structure.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - mediarch_network
-
+  master-wisper:
+    container_name: Master-Wisper
+    image: master-wisper:0.1.0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mariadb:
+        condition: service_healthy
+      file-storage-service:
+        condition: service_started
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      MARIADB_HOST: mariadb
+      MARIADB_PORT: 3306
+      MARIADB_USER: mediarch_user
+      MARIADB_PASSWORD: mediarch_password
+      MARIADB_DATABASE: mediarch
+    volumes:
+      - ./storage/master:/app/storage
+    ports:
+      - "8000:8000"
+    networks:
+      - mediarch_network
+  rabbitmq:
+    image: rabbitmq:4.0-management-alpine
+    container_name: RabbitMQ
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./storage/rabbitmq:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    restart: unless-stopped
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mediarch_network
+  file-storage-service:
+    image: file-storage-service:0.0.1
+    container_name: file-storage-service
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./storage/shared_storage:/app/storage
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - STORAGE_PATH=/app/storage
+      - MAX_FILE_SIZE=52428800
+    restart: unless-stopped
+    networks:
+      - mediarch_network
+  audio-splitter:
+    image: audio-splitter-service:0.3.1
+    container_name: Audio-Splitter
+    volumes:
+      - ./storage/splitter:/shared_storage
+    privileged: true
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+    networks:
+      - mediarch_network
+  whisper-service-Hugo:
+    image: whisper-service:0.2.0
+    container_name: Worker-Hugo
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./storage/wisper/models:/app/models
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      # RabbitMQ конфигурация
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=5672
+      - RABBIT_USER=guest
+      - RABBIT_PASSWORD=guest
+      - RABBIT_HEARTBEAT=600
+      # Названия очередей
+      - QUEUE_IN=wisper_in
+      - QUEUE_OUT=wisper_out
+      # Имя воркера
+      - WORKER_NAME=Hugo
+    restart: unless-stopped
+    networks:
+      - mediarch_network
+  whisper-service-Bobby:
+    image: whisper-service:0.2.0
+    container_name: Worker-Bobby
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./storage/wisper/models:/app/models
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      # RabbitMQ конфигурация
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=5672
+      - RABBIT_USER=guest
+      - RABBIT_PASSWORD=guest
+      - RABBIT_HEARTBEAT=600
+      # Названия очередей
+      - QUEUE_IN=wisper_in
+      - QUEUE_OUT=wisper_out
+      # Имя воркера
+      - WORKER_NAME=Bobby
+    restart: unless-stopped
+    networks:
+      - mediarch_network
 volumes:
   db_data:
 
