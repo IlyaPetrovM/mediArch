@@ -159,15 +159,18 @@ app.post('/api/upload', function(req, res) {
 
 
 /**
- * 
- * @param {String} filePath 
- * @returns 
+ * @param {String} filePath
+ * @returns
  */
 function calculateHash(filePath) {
     const fileData = fs.readFileSync(filePath);
     const hash = crypto.createHash('sha256').update(fileData).digest('hex');
     return hash;
 }
+
+
+const http = require('http');
+const https = require('https');
 
 app.get('/api/file/size', (req, res)=>{
     const { filename } = req.query;
@@ -330,6 +333,136 @@ app.post('/api/sql/dataOnly', function(req, res) {
 
 
 
+
+
+/**
+ * @brief Вспомогательная функция для POST запроса
+ */
+function postToService(url, data) {
+    return new Promise((resolve, reject) => {
+        const urlObj = new URL(url);
+        const postData = JSON.stringify(data);
+        const protocol = urlObj.protocol === 'https:' ? https : http;
+
+        const options = {
+            hostname: urlObj.hostname,
+            port: urlObj.port,
+            path: urlObj.pathname + urlObj.search,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        };
+
+        const req = protocol.request(options, (res) => {
+            let responseData = '';
+            res.on('data', (chunk) => {
+                responseData += chunk;
+            });
+            res.on('end', () => {
+                try {
+                    resolve(JSON.parse(responseData));
+                } catch (e) {
+                    resolve({ raw: responseData });
+                }
+            });
+        });
+
+        req.on('error', (err) => {
+            reject(err);
+        });
+
+        req.write(postData);
+        req.end();
+    });
+}
+
+
+/**
+ * @brief Инициировать распознавание через master-wisper
+ */
+app.post('/api/transcription/start', async (req, res) => {
+    try {
+        const { file_id } = req.body;
+
+        if (!file_id) {
+            return res.status(400).send({ errors: 'file_id is required' });
+        }
+
+        const conn = mysql.createConnection(config.DB);
+
+        conn.query('SELECT name FROM files WHERE id = ?', [file_id], async (err, results) => {
+            if (err || !results || results.length === 0) {
+                conn.end();
+                return res.status(404).send({ errors: 'File not found' });
+            }
+
+            const filename = results[0].name;
+            const fileUrl = config.FILE_STORAGE_URL + '/' + filename;
+
+            const payload = {
+                file_id: file_id,
+                url: fileUrl,
+                model_size: 'small',
+                format: 'json',
+                min_mark_duration_ms: 60000
+            };
+
+            try {
+                const wisperUrl = config.MASTER_WISPER_URL + '/transcribe';
+                const wisperData = await postToService(wisperUrl, payload);
+                conn.end();
+                res.send({ errors: null, data: wisperData });
+            } catch (fetchErr) {
+                conn.end();
+                console.error('Error calling master-wisper:', fetchErr);
+                res.status(500).send({ errors: 'Failed to call master-wisper service' });
+            }
+        });
+    } catch (err) {
+        console.error('Error in /api/transcription/start:', err);
+        res.status(500).send({ errors: err.message });
+    }
+});
+
+
+/**
+ * @brief Получить статус задачи транскрибации
+ */
+app.get('/api/transcription/status', (req, res) => {
+    try {
+        const { file_id } = req.query;
+
+        if (!file_id) {
+            return res.status(400).send({ status: null, task_id: null });
+        }
+
+        const conn = mysql.createConnection(config.DB);
+
+        conn.query(
+            'SELECT status, task_id FROM transcribtion_tasks WHERE file_id = ? ORDER BY created_at DESC LIMIT 1',
+            [file_id],
+            (err, results) => {
+                conn.end();
+
+                if (err) {
+                    console.error('DB Error:', err);
+                    return res.send({ status: null, task_id: null });
+                }
+
+                if (results && results.length > 0) {
+                    res.send({ status: results[0].status, task_id: results[0].task_id });
+                } else {
+                    res.send({ status: null, task_id: null });
+                }
+            }
+        );
+    } catch (err) {
+        console.error('Error in /api/transcription/status:', err);
+        res.send({ status: null, task_id: null });
+    }
+});
 
 
 app.listen(config.PORT, function() {

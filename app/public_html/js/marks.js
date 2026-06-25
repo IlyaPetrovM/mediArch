@@ -261,8 +261,8 @@ async function runMarks(){
         selectableRows:1,
         autoColumnsDefinitions: FORMAT_MARKS_COLUMNS
     });
-    
-    
+
+
     table.on('tableBuilt', function (e) {
       table.setData(
         'api/sql/dataOnly',
@@ -288,11 +288,17 @@ async function runMarks(){
         );
       }
     });
-    
+
     btnAddRow.onclick = function(){ addMark(table, FILE_ID);};
     const btnPlay = document.getElementById('btnPlay')
     btnPlay.onclick = playVideo;
-    
+
+    if (FILE_ID) {
+        btnRecognize.hidden = false;
+        await checkTranscriptionStatus();
+    }
+    btnRecognize.onclick = startTranscription;
+
     document.body.addEventListener('keydown',(e)=>{
         if(e.altKey){
             console.log(e)
@@ -304,8 +310,8 @@ async function runMarks(){
 
         }
     })
-    
-    previewVideo.ontimeupdate = function(e){ 
+
+    previewVideo.ontimeupdate = function(e){
         timeMonitor.innerHTML = toHHMMSSsss(previewVideo.currentTime*1000);
         if(FILE_ID) goToMark(Number.parseInt(previewVideo.currentTime*1000), table);
     }
@@ -454,7 +460,7 @@ async function addMark(_table, _file_id){
 /**
 *   @brief Преобразование секунд в обычную строку
 *   Пример использования: "602".toHHMMSS() // Результат: "00:10:02"
-*   @return Строка содержащая время в формате hh:mm:ss 
+*   @return Строка содержащая время в формате hh:mm:ss
 */
 String.prototype.toHHMMSS = function () {
     var sec_num = parseInt(this, 10); // don't forget the second param
@@ -466,6 +472,56 @@ String.prototype.toHHMMSS = function () {
     if (minutes < 10) {minutes = "0"+minutes;}
     if (seconds < 10) {seconds = "0"+seconds;}
     return hours+':'+minutes+':'+seconds;
+}
+
+
+/**
+ * @brief Проверить статус задачи транскрибации
+ */
+async function checkTranscriptionStatus() {
+    try {
+        const res = await fetch(`/api/transcription/status?file_id=${FILE_ID}`);
+        const data = await res.json();
+        if (data.status === 'completed') {
+            btnRecognize.textContent = 'Распознать повторно';
+            btnRecognize.disabled = false;
+        } else if (data.status === 'pending' || data.status === 'processing') {
+            btnRecognize.textContent = 'Распознавание в процессе...';
+            btnRecognize.disabled = true;
+        } else if (data.status === 'error') {
+            btnRecognize.textContent = 'Ошибка при распознавании';
+            btnRecognize.disabled = false;
+        }
+    } catch (err) {
+        console.error('Ошибка при проверке статуса:', err);
+    }
+}
+
+
+/**
+ * @brief Запустить распознавание
+ */
+async function startTranscription() {
+    btnRecognize.textContent = 'Распознавание в процессе...';
+    btnRecognize.disabled = true;
+    try {
+        const res = await fetch('/api/transcription/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file_id: FILE_ID }),
+        });
+        const data = await res.json();
+        if (data.errors) {
+            alert('Ошибка при запуске распознавания');
+            btnRecognize.textContent = 'Распознать ИИ';
+            btnRecognize.disabled = false;
+        }
+    } catch (err) {
+        console.error('Ошибка при отправке запроса:', err);
+        alert('Ошибка при запуске распознавания');
+        btnRecognize.textContent = 'Распознать ИИ';
+        btnRecognize.disabled = false;
+    }
 }
 
 
