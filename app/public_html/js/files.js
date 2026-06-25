@@ -61,7 +61,7 @@ const STANDARD_QUERY = `SELECT
                     FROM ((files as f
                             LEFT JOIN files_to_informants AS conn ON (conn.file_id = f.id) )
                             LEFT JOIN informants inf ON (conn.inf_id = inf.id)
-                            LEFT JOIN EVENTS ev ON (ev.id = f.event_id)) GROUP BY f.id`;
+                            LEFT JOIN events ev ON (ev.id = f.event_id)) GROUP BY f.id`;
 const ORDER_BY = ` ORDER BY id DESC `;
 let OFFSET = 0;
 let LIMIT = 30;
