@@ -23,7 +23,6 @@ const crypto = require('crypto')
 
 const config  = require('./config')
 const users  = require('./users')
-const recognizeAudio = require('./recognizeAudio');
 const { pipeline } = require('stream');
 
 const app = express()
@@ -332,28 +331,6 @@ app.post('/api/sql/dataOnly', function(req, res) {
 
 
 
-
-/** 
-    Перенаправление запроса к базе данных
-*/
-app.post('/api/speech-recognition', function(req, res) {
-    
-    const {inputPath, fragmentDuration, recId} = req.body
-    
-    recognizeAudio('public_html/' + inputPath, 'temp_audio/', recId, fragmentDuration, function(fragments){
-        console.log('\n  Удалось обработать кусочки:', fragments)
-
-        const conn = mysql.createConnection(config.DB)
-
-        conn.query(`UPDATE files SET recognitionStatus='Готово' WHERE id=${recId}`, (errors, data, fields) => {
-            if (errors) console.error(errors);
-            console.log('Статус ГОТОВО')
-        });
-        conn.end();
-
-        res.send(JSON.stringify({fragments}))
-    })
-});
 
 app.listen(config.PORT, function() {
     console.log('Server started at ', config.PORT, ' port')
