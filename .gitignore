@@ -15,3 +15,4 @@ temp/*
 assembledChunks/*
 chunks/*
 package-lock.json
+storage/*
