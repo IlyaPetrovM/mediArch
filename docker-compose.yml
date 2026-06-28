@@ -64,7 +64,7 @@ services:
       MARIADB_USER: mediarch_user
       MARIADB_PASSWORD: mediarch_password
       MARIADB_DATABASE: mediarch
-      FILE_STORAGE_SERVICE_URL: http://192.168.1.111:3001
+      FILE_STORAGE_SERVICE_URL: http://192.168.1.2:3001
     volumes:
       - ./storage/master:/app/storage
     ports:
@@ -82,7 +82,7 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
-    restart: unless-stopped
+    restart: always
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 10s
@@ -102,7 +102,7 @@ services:
       - NODE_ENV=production
       - STORAGE_PATH=/app/storage
       - MAX_FILE_SIZE=52428800
-    restart: unless-stopped
+    restart: always
     networks:
       - mediarch_network
   audio-splitter:
@@ -111,7 +111,7 @@ services:
     volumes:
       - ./storage/splitter:/shared_storage
     privileged: true
-    restart: unless-stopped
+    restart: always
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -120,38 +120,12 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
       RABBITMQ_PASSWORD: guest
-      FILE_STORAGE_API: http://192.168.1.111:3001/api/files
+      FILE_STORAGE_API: http://192.168.1.2:3001/api/files
     networks:
       - mediarch_network
-  whisper-service-Hugo:
-    image: whisper-service:0.2.0
-    container_name: Worker-Hugo
-    ports:
-      - "8001:8000"
-    volumes:
-      - ./storage/wisper/models:/app/models
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - PYTHONUNBUFFERED=1
-      # RabbitMQ конфигурация
-      - RABBIT_HOST=rabbitmq
-      - RABBIT_PORT=5672
-      - RABBIT_USER=guest
-      - RABBIT_PASSWORD=guest
-      - RABBIT_HEARTBEAT=600
-      # Названия очередей
-      - QUEUE_IN=wisper_in
-      - QUEUE_OUT=wisper_out
-      # Имя воркера
-      - WORKER_NAME=Hugo
-    restart: unless-stopped
-    networks:
-      - mediarch_network
-  whisper-service-Bobby:
-    image: whisper-service:0.2.0
-    container_name: Worker-Bobby
+  whisper-service-CUDA:
+    image: whisper-service:0.2.1-gpu
+    container_name: Worker-CUDA
     ports:
       - "8002:8000"
     volumes:
@@ -171,8 +145,8 @@ services:
       - QUEUE_IN=wisper_in
       - QUEUE_OUT=wisper_out
       # Имя воркера
-      - WORKER_NAME=Bobby
-    restart: unless-stopped
+      - WORKER_NAME=Worker-CUDA
+    restart: always
     networks:
       - mediarch_network
 volumes:
