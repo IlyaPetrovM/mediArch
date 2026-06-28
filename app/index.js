@@ -404,7 +404,7 @@ app.post('/api/transcription/start', async (req, res) => {
             const payload = {
                 file_id: file_id,
                 url: fileUrl,
-                model_size: 'small',
+                model_size: 'bzikst/faster-whisper-large-v3-russian-int8',
                 format: 'json',
                 min_mark_duration_ms: 60000
             };

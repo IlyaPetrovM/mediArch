@@ -46,7 +46,7 @@ services:
       - mediarch_network
   master-wisper:
     container_name: Master-Wisper
-    image: master-wisper:0.1.0
+    image: master-wisper:0.1.1
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -64,6 +64,7 @@ services:
       MARIADB_USER: mediarch_user
       MARIADB_PASSWORD: mediarch_password
       MARIADB_DATABASE: mediarch
+      FILE_STORAGE_SERVICE_URL: http://192.168.1.111:3001
     volumes:
       - ./storage/master:/app/storage
     ports:
@@ -105,7 +106,7 @@ services:
     networks:
       - mediarch_network
   audio-splitter:
-    image: audio-splitter-service:0.3.1
+    image: audio-splitter-service:0.4.0
     container_name: Audio-Splitter
     volumes:
       - ./storage/splitter:/shared_storage
@@ -119,6 +120,7 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
       RABBITMQ_PASSWORD: guest
+      FILE_STORAGE_API: http://192.168.1.111:3001/api/files
     networks:
       - mediarch_network
   whisper-service-Hugo:
