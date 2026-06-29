@@ -19,8 +19,12 @@ services:
     volumes:
       - ./app:/app
       - /app/node_modules
-      - ./storage/shared_storage:/app/public_html/uploads
-      - ./storage/mediarch/upload_parts:/app/public_html/upload_parts
+      - type: bind
+        source: D:\derevni-sela\varzuga2026\storage\shared_storage
+        target: /app/public_html/uploads
+      - type: bind
+        source: D:\derevni-sela\varzuga2026\storage\upload_parts
+        target: /app/public_html/upload_parts
     networks:
       - mediarch_network
   mariadb:
@@ -46,7 +50,7 @@ services:
       - mediarch_network
   master-wisper:
     container_name: Master-Wisper
-    image: master-wisper:0.1.1
+    image: master-wisper:0.2.0
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -55,7 +59,7 @@ services:
       file-storage-service:
         condition: service_started
     environment:
-      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_HOST: rabbitmq.lan
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
       RABBITMQ_PASSWORD: guest
@@ -96,7 +100,9 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./storage/shared_storage:/app/storage
+      - type: bind
+        source: D:\derevni-sela\varzuga2026\storage\shared_storage
+        target: /app/storage
     environment:
       - PORT=3001
       - NODE_ENV=production
@@ -123,13 +129,39 @@ services:
       FILE_STORAGE_API: http://192.168.1.2:3001/api/files
     networks:
       - mediarch_network
+  whisper-service-CPU:
+    image: whisper-service:0.2.4
+    container_name: Worker-CPU
+    ports:
+      - "8003:8000"
+    # volumes:
+      # - ./storage/wisper/models:/app/models
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      # RabbitMQ конфигурация
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=5672
+      - RABBIT_USER=guest
+      - RABBIT_PASSWORD=guest
+      - RABBIT_HEARTBEAT=600
+      # Названия очередей
+      - QUEUE_IN=wisper_in
+      - QUEUE_OUT=wisper_out
+      # Имя воркера
+      - WORKER_NAME=Worker-CPU
+    restart: always
+    networks:
+      - mediarch_network
   whisper-service-CUDA:
-    image: whisper-service:0.2.1-gpu
+    image: whisper-service:0.2.4-cuda
     container_name: Worker-CUDA
     ports:
       - "8002:8000"
-    volumes:
-      - ./storage/wisper/models:/app/models
+    # volumes:
+    #   - ./storage/wisper/models:/app/models
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -149,6 +181,13 @@ services:
     restart: always
     networks:
       - mediarch_network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 volumes:
   db_data:
 
