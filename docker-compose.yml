@@ -1,0 +1,196 @@
+services:
+  mediarch:
+    container_name: mediArch
+    build: .
+    image: mediarch:0.2.0
+    ports:
+      - "3000:3000"
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - DB_NAME=mediarch
+      - DB_USER=mediarch_user
+      - DB_PASSWORD=mediarch_password
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - ./app:/app
+      - /app/node_modules
+      - type: bind
+        source: D:\derevni-sela\varzuga2026\storage\shared_storage
+        target: /app/public_html/uploads
+      - type: bind
+        source: D:\derevni-sela\varzuga2026\storage\upload_parts
+        target: /app/public_html/upload_parts
+    networks:
+      - mediarch_network
+  mariadb:
+    container_name: db
+    image: mariadb:10.9
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: mediarch
+      MYSQL_USER: mediarch_user
+      MYSQL_PASSWORD: mediarch_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./init-db/create_database_structure.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mediarch_network
+  master-wisper:
+    container_name: Master-Wisper
+    image: master-wisper:0.2.0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mariadb:
+        condition: service_healthy
+      file-storage-service:
+        condition: service_started
+    environment:
+      RABBITMQ_HOST: rabbitmq.lan
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      MARIADB_HOST: mariadb
+      MARIADB_PORT: 3306
+      MARIADB_USER: mediarch_user
+      MARIADB_PASSWORD: mediarch_password
+      MARIADB_DATABASE: mediarch
+      FILE_STORAGE_SERVICE_URL: http://192.168.1.2:3001
+    volumes:
+      - ./storage/master:/app/storage
+    ports:
+      - "8000:8000"
+    networks:
+      - mediarch_network
+  rabbitmq:
+    image: rabbitmq:4.0-management-alpine
+    container_name: RabbitMQ
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./storage/rabbitmq:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    restart: always
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mediarch_network
+  file-storage-service:
+    image: file-storage-service:0.0.1
+    container_name: file-storage-service
+    ports:
+      - "3001:3001"
+    volumes:
+      - type: bind
+        source: D:\derevni-sela\varzuga2026\storage\shared_storage
+        target: /app/storage
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - STORAGE_PATH=/app/storage
+      - MAX_FILE_SIZE=52428800
+    restart: always
+    networks:
+      - mediarch_network
+  audio-splitter:
+    image: audio-splitter-service:0.4.0
+    container_name: Audio-Splitter
+    volumes:
+      - ./storage/splitter:/shared_storage
+    privileged: true
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      FILE_STORAGE_API: http://192.168.1.2:3001/api/files
+    networks:
+      - mediarch_network
+  whisper-service-CPU:
+    image: whisper-service:0.2.4
+    container_name: Worker-CPU
+    ports:
+      - "8003:8000"
+    # volumes:
+      # - ./storage/wisper/models:/app/models
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      # RabbitMQ конфигурация
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=5672
+      - RABBIT_USER=guest
+      - RABBIT_PASSWORD=guest
+      - RABBIT_HEARTBEAT=600
+      # Названия очередей
+      - QUEUE_IN=wisper_in
+      - QUEUE_OUT=wisper_out
+      # Имя воркера
+      - WORKER_NAME=Worker-CPU
+    restart: always
+    networks:
+      - mediarch_network
+  whisper-service-CUDA:
+    image: whisper-service:0.2.4-cuda
+    container_name: Worker-CUDA
+    ports:
+      - "8002:8000"
+    # volumes:
+    #   - ./storage/wisper/models:/app/models
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      # RabbitMQ конфигурация
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=5672
+      - RABBIT_USER=guest
+      - RABBIT_PASSWORD=guest
+      - RABBIT_HEARTBEAT=600
+      # Названия очередей
+      - QUEUE_IN=wisper_in
+      - QUEUE_OUT=wisper_out
+      # Имя воркера
+      - WORKER_NAME=Worker-CUDA
+    restart: always
+    networks:
+      - mediarch_network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+volumes:
+  db_data:
+
+networks:
+  mediarch_network:
+    driver: bridge
