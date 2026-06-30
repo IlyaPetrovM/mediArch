@@ -299,6 +299,12 @@ async function runMarks(){
     }
     btnRecognize.onclick = startTranscription;
 
+    if (FILE_ID) {
+        linkTranscriptionTasks.href = `/transcription_tasks.html?file_id=${FILE_ID}`;
+    } else {
+        linkTranscriptionTasks.href = `/transcription_tasks.html`;
+    }
+
     document.body.addEventListener('keydown',(e)=>{
         if(e.altKey){
             console.log(e)
