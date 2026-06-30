@@ -22,7 +22,6 @@ const crypto = require('crypto')
 
 
 const config  = require('./config')
-const users  = require('./users')
 const { pipeline } = require('stream');
 
 const app = express()
@@ -53,18 +52,49 @@ app.get('/index.html',(req, res)=>{
 })
 
 app.post('/api/login', (req, res) => {
+    // username здесь — это email выбранного пользователя
     const {username, password} = req.body;
     console.log(username, password)
 
-    // аутентификация. поиск в базе
-    const user = users.find(user => user.username === username && user.password === password);
-    if(user) {
-        req.session.user = user;
-        // req.session.cookie.maxAge = 500;
-        res.send( {errors: null, data: 'ok', message: 'OK'} );
-    }else{
-         res.send( {errors: true, data: null, message: 'no auth. user does not found'} );
-    }
+    // аутентификация. поиск в базе данных
+    const conn = mysql.createConnection(config.DB);
+    conn.query(
+        'SELECT id, last_name, first_name, email FROM users WHERE email = ? AND password = ?',
+        [username, password],
+        (errors, results) => {
+            conn.end();
+            if(!errors && results && results.length > 0) {
+                const u = results[0];
+                req.session.user = {
+                    id: u.id,
+                    email: u.email,
+                    last_name: u.last_name,
+                    first_name: u.first_name,
+                    fullName: (u.last_name + ' ' + u.first_name).trim()
+                };
+                res.send( {errors: null, data: 'ok', message: 'OK'} );
+            } else {
+                if(errors) console.error(errors);
+                res.send( {errors: true, data: null, message: 'no auth. user does not found'} );
+            }
+        }
+    );
+})
+
+// Список пользователей для выпадающего списка на странице входа
+app.get('/api/users', (req, res) => {
+    const conn = mysql.createConnection(config.DB);
+    conn.query(
+        'SELECT id, last_name, first_name, email FROM users ORDER BY last_name, first_name',
+        (errors, results) => {
+            conn.end();
+            if(errors) {
+                console.error(errors);
+                return res.send({errors: errors, data: []});
+            }
+            res.send({errors: null, data: results});
+        }
+    );
 })
 
 app.get('/js/*.js', (req, res) => {
@@ -89,7 +119,7 @@ app.use(express.static('public_html'))
 app.use('/uploads', express.static(config.UPLOAD_PATH));
 
 app.post('/api/session/username', (req, res)=>{
-    res.send({errors: null, data: req.session.user.username})
+    res.send({errors: null, data: req.session.user.fullName})
 })
 
 app.post('/api/session/end', (req, res)=>{
@@ -137,7 +167,7 @@ app.post('/api/upload', function(req, res) {
             })
         }else{
                 
-                console.info( 'пользователь: ', req.session.user.username); //req.session.user.username
+                console.info( 'пользователь: ', req.session.user.fullName);
                 console.info(files.name);
 
                 files.name = Buffer.from(files.name, 'latin1').toString('utf8');
@@ -149,7 +179,7 @@ app.post('/api/upload', function(req, res) {
         // console.log('SESSION: ',req.session.user)
         
     } catch (err) {
-        console.error( new Date().toLocaleString(),'Произошла ошибка у пользователя: ', req.session.user.username);
+        console.error( new Date().toLocaleString(),'Произошла ошибка у пользователя: ', req.session.user.fullName);
         console.error(err)
         res.status(500).send({errors: err, data: 'ERROR', message: 'ERROR '});
     }

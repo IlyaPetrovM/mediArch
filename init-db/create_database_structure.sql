@@ -6,6 +6,16 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 USE mediarch;
 
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `last_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '' COMMENT 'Фамилия',
+  `first_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '' COMMENT 'Имя',
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `events` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -138,6 +148,7 @@ CREATE TABLE IF NOT EXISTS `transcribtion_tasks` (
   `url` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `splitted_file_id` varchar(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `format` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT 'json' COMMENT 'output format: json, srt, vtt, txt',
+  `max_duration` int(11) DEFAULT 60 COMMENT 'max chunk duration in seconds passed to the splitter; needed to re-publish split on recovery',
   `min_mark_duration_ms` int(11) DEFAULT 60000 COMMENT 'minimum duration in ms for grouping transcription segments into marks',
   `error_message` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`task_id`),
@@ -224,6 +235,12 @@ END//
 DELIMITER ;
 SET SQL_MODE=@OLDTMP_SQL_MODE;
 
+
+-- Начальные пользователи (пароль у всех '1', при необходимости отредактируйте)
+INSERT IGNORE INTO `users` (`last_name`, `first_name`, `email`, `password`) VALUES
+  ('Аранчин', 'Иван', 'aranchin@example.com', '1'),
+  ('Дорожный', 'Пётр', 'road@example.com', '1'),
+  ('Тестов', 'Тест', 'test@example.com', '1');
 
 -- 1. Вставляем событие (опционально)
 INSERT INTO `events` (`title`, `user_created`)
