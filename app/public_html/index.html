@@ -43,9 +43,8 @@
             <div class='col'></div>
             <div class='col-sm'>
                 <div class='row g-3'>
-                    <input name=username id=inputUsername placeholder='email' class='form-control' />
-                    <br>
-                    <input name=password id=inputPassword type=password placeholder='Пароль' class='form-control' />
+                    <label for=inputUsername class='form-label'>Выберите пользователя:</label>
+                    <select name=username id=inputUsername class='form-control'></select>
                     <button onclick='login()' class=' btn btn-primary'>Войти</button>
                     <div id=msg></div>
                 </div>

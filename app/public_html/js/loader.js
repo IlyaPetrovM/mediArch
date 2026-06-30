@@ -13,6 +13,8 @@ fetch('/api/session/username', {
 }).then(res => res.json())
 .then(json => {
     user_created = json.data;
+    let banner = document.getElementById('currentUserBanner');
+    if(banner) banner.textContent = 'Загрузка от лица: ' + user_created;
 })
 
 async function checkChunk(totalChunks, currnetChunk, filename, chunkSize) {
