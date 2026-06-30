@@ -8,6 +8,15 @@ async function loadUsers(){
 
     let res = await response.json();
     let select = document.getElementById('inputUsername');
+
+    // Пустой нередактируемый пункт-заглушка
+    let placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Выберите пользователя';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+
     (res.data || []).forEach(user => {
         let option = document.createElement('option');
         // авторизуемся по email, а показываем Фамилию и Имя
