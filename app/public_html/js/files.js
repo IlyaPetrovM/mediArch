@@ -216,6 +216,9 @@ const FORMAT_FILES_COLUMNS = [
       valuesLookup: true,
       freetext: true,
     },
+    headerFilterFunc:(headerValue, rowValue, rowData, filterParams)=>{
+      return String(rowValue || '').toLowerCase().includes(String(headerValue).toLowerCase());
+    },
 
     cellEdited: (cell) => {
       console.log('event_title');
@@ -506,8 +509,13 @@ const FORMAT_FILES_COLUMNS = [
     field: 'informants',
     headerFilter:'input',
     headerFilterFunc:(headerValue, rowValue, rowData, filterParams)=>{
-      console.log(rowValue[0].first_name.search(headerValue));
-      return rowValue.length > 0 && String(rowValue[0].first_name).includes(headerValue)
+      if (!Array.isArray(rowValue) || rowValue.length === 0) return false;
+      const search = String(headerValue).toLowerCase();
+      return rowValue.some(inf =>
+        `${inf.last_name || ''} ${inf.first_name || ''} ${inf.middle_name || ''}`
+          .toLowerCase()
+          .includes(search)
+      );
     },
     // headerFilterParams:{
     //   // valuesLookup:true,
@@ -965,7 +973,7 @@ function downloadFile(eventOnClick, path){
 function startSearch() {
 
     if (!(srch.value === undefined || srch.value === '')){
-        where = ` HAVING (tags like '%${srch.value}%' OR description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' )`
+        where = ` HAVING (tags like '%${srch.value}%' OR description like '%${srch.value}%' OR recognizedText like '%${srch.value}%' OR oldName like '%${srch.value}%' OR name like '%${srch.value}%' OR fileExt like '%${srch.value}%' OR fileType like '%${srch.value}%' OR informants like '%${srch.value}%' OR event_title like '%${srch.value}%' )`
     }else{
         where = ` `;
     }
