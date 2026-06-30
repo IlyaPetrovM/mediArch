@@ -2,7 +2,7 @@ services:
   mediarch:
     container_name: mediArch
     build: .
-    image: mediarch:0.2.1
+    image: mediarch:0.2.2
     ports:
       - "3000:3000"
     restart: always
