@@ -273,22 +273,6 @@ async function runMarks(){
         'POST'
       );
     });
-    table.on('dataLoaded', (data) => {
-      console.log(data);
-      if (data.length === 0) {
-        // добавить первую метку
-        addMark(table, FILE_ID);
-        table.setData(
-          'api/sql/dataOnly',
-          {
-            query: QUERY_MARKS + where,
-            inserts: '',
-          },
-          'POST'
-        );
-      }
-    });
-
     btnAddRow.onclick = function(){ addMark(table, FILE_ID);};
     const btnPlay = document.getElementById('btnPlay')
     btnPlay.onclick = playVideo;
